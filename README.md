@@ -1,4 +1,4 @@
-# Soma - Your Biological Twin
+# Soma - Your Biological Digital Twin
 
 A local-first personal health data pipeline that turns scattered lab report PDFs into a structured, queryable health record. A "biological digital twin" you fully own and control.
 
