@@ -1,0 +1,41 @@
+biomarker_key,loinc_code,conventional_unit,si_unit,conversion_factor,category,optimal_range_low_si,optimal_range_high_si
+Glucose (Fasting),1558-6,mg/dL,mmol/L,0.0555,metabolic,3.9,5.0
+HbA1c,4548-4,%,%,1.0,metabolic,4.0,5.3
+Insulin (Fasting),20448-7,uIU/mL,pmol/L,6.945,metabolic,14.0,90.0
+HOMA-IR,,,ratio,1.0,metabolic,0.5,1.5
+Total Cholesterol,2093-3,mg/dL,mmol/L,0.0259,lipid,3.1,5.2
+LDL Cholesterol,2089-1,mg/dL,mmol/L,0.0259,lipid,1.0,2.6
+HDL Cholesterol,2085-9,mg/dL,mmol/L,0.0259,lipid,1.3,2.5
+Triglycerides,2571-8,mg/dL,mmol/L,0.0113,lipid,0.4,1.1
+Lp(a),10835-7,nmol/L,nmol/L,1.0,lipid,0.0,75.0
+ApoB,1884-6,mg/dL,g/L,0.01,lipid,0.4,0.9
+Total Testosterone,2986-8,ng/dL,nmol/L,0.0347,hormonal,14.0,31.0
+Free Testosterone,2991-8,pg/mL,pmol/L,3.467,hormonal,17.0,70.0
+SHBG,8619-2,nmol/L,nmol/L,1.0,hormonal,20.0,55.0
+Estradiol,2243-4,pg/mL,pmol/L,3.671,hormonal,73.4,146.8
+TSH,3016-3,mIU/L,mIU/L,1.0,thyroid,0.5,2.5
+Free T4,3024-7,ng/dL,pmol/L,12.87,thyroid,12.0,22.0
+Free T3,3051-0,pg/mL,pmol/L,1.536,thyroid,3.5,6.5
+Vitamin D (25-OH),1989-3,ng/mL,nmol/L,2.496,vitamin,100.0,150.0
+Vitamin B12,2132-9,pg/mL,pmol/L,0.7378,vitamin,300.0,700.0
+Folate,2284-8,ng/mL,nmol/L,2.266,vitamin,20.0,60.0
+Ferritin,2276-4,ng/mL,ug/L,1.0,iron,40.0,150.0
+Iron,2498-4,ug/dL,umol/L,0.179,iron,10.7,28.6
+Transferrin Saturation,2502-3,%,%,1.0,iron,20.0,45.0
+CRP (hs),30522-7,mg/L,mg/L,1.0,inflammatory,0.0,1.0
+ESR,4537-7,mm/hr,mm/hr,1.0,inflammatory,0.0,10.0
+Homocysteine,13965-9,umol/L,umol/L,1.0,inflammatory,5.0,10.0
+IL-6,26881-3,pg/mL,pg/mL,1.0,inflammatory,0.0,5.0
+TNF-alpha,13900-6,pg/mL,pg/mL,1.0,inflammatory,0.0,8.1
+ALT,1742-6,U/L,U/L,1.0,liver,7.0,30.0
+AST,1920-8,U/L,U/L,1.0,liver,10.0,30.0
+GGT,2324-2,U/L,U/L,1.0,liver,9.0,36.0
+Creatinine,2160-0,mg/dL,umol/L,88.42,kidney,62.0,106.0
+eGFR,33914-3,mL/min/1.73m2,mL/min/1.73m2,1.0,kidney,90.0,120.0
+BUN,3094-0,mg/dL,mmol/L,0.357,kidney,2.5,7.1
+Uric Acid,3084-1,mg/dL,umol/L,59.48,kidney,208.0,416.0
+WBC,6690-2,10^3/uL,10^9/L,1.0,hematology,4.0,10.0
+RBC,789-8,10^6/uL,10^12/L,1.0,hematology,4.5,5.5
+Hemoglobin,718-7,g/dL,g/L,10.0,hematology,135.0,175.0
+Hematocrit,4544-3,%,L/L,0.01,hematology,0.40,0.52
+Platelets,777-3,10^3/uL,10^9/L,1.0,hematology,150.0,400.0

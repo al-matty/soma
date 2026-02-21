@@ -1,0 +1,29 @@
+name: soma
+version: '1.0.0'
+config-version: 2
+
+profile: soma
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+snapshot-paths: ["snapshots"]
+analysis-paths: ["analyses"]
+
+clean-targets:
+  - target
+  - dbt_packages
+  - logs
+
+seeds:
+  soma:
+    biomarker_meta:
+      +column_types:
+        biomarker_key: varchar
+        loinc_code: varchar
+        conventional_unit: varchar
+        si_unit: varchar
+        conversion_factor: double
+        category: varchar
+        optimal_range_low_si: double
+        optimal_range_high_si: double
