@@ -1,0 +1,53 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    tables:
+      - name: lab_results
+        description: Raw biomarker extractions from lab reports
+        columns:
+          - name: id
+            tests:
+              - unique
+              - not_null
+          - name: source_file
+            tests:
+              - not_null
+          - name: biomarker_name_raw
+            tests:
+              - not_null
+          - name: value_raw
+            tests:
+              - not_null
+
+      - name: documents
+        description: Registry of all ingested source documents
+        columns:
+          - name: id
+            tests:
+              - unique
+              - not_null
+          - name: source_file
+            tests:
+              - unique
+              - not_null
+
+models:
+  - name: stg_lab_results
+    description: Cleaned, typed, and deduplicated lab results
+    columns:
+      - name: lab_result_id
+        description: Primary key from raw
+        tests:
+          - unique
+          - not_null
+      - name: biomarker_name
+        tests:
+          - not_null
+      - name: value_numeric
+        description: Parsed numeric value (detection limit values use half the limit)
+      - name: is_below_detection_limit
+        description: True if raw value had < prefix
+      - name: is_above_detection_limit
+        description: True if raw value had > prefix
