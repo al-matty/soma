@@ -12,8 +12,16 @@ models:
       - name: biomarker_key
         tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('biomarker_meta')
+                field: biomarker_key
+              config:
+                severity: warn
       - name: value_si
         description: Value converted to SI units
+        tests:
+          - not_null
       - name: is_within_ref_range
         description: Whether value falls within provider reference range
       - name: is_within_optimal_range
