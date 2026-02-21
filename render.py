@@ -216,18 +216,20 @@ def render_all(db_path: Path = DB_PATH) -> list[str]:
     """Generate all profile markdown files. Returns list of paths written."""
     con = duckdb.connect(str(db_path))
 
-    PROFILE_DOCS_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        PROFILE_DOCS_DIR.mkdir(parents=True, exist_ok=True)
 
-    paths = []
-    for filename, renderer in [
-        ("current_snapshot.md", render_current_snapshot),
-        ("timeline.md", render_timeline),
-        ("medical_history.md", render_medical_history),
-    ]:
-        content = renderer(con)
-        path = PROFILE_DOCS_DIR / filename
-        path.write_text(content)
-        paths.append(str(path))
+        paths = []
+        for filename, renderer in [
+            ("current_snapshot.md", render_current_snapshot),
+            ("timeline.md", render_timeline),
+            ("medical_history.md", render_medical_history),
+        ]:
+            content = renderer(con)
+            path = PROFILE_DOCS_DIR / filename
+            path.write_text(content)
+            paths.append(str(path))
 
-    con.close()
-    return paths
+        return paths
+    finally:
+        con.close()

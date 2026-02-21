@@ -85,6 +85,8 @@ def extract_api(pdf_path: Path) -> tuple[ExtractionResult, dict[str, str]]:
     )
 
     # Parse response
+    if not response.content or not hasattr(response.content[0], "text"):
+        raise ValueError("Empty or unexpected response from Claude API")
     response_text = response.content[0].text
     # Strip markdown code fences if present
     response_text = re.sub(r"^```(?:json)?\s*\n?", "", response_text)

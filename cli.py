@@ -30,6 +30,8 @@ def load(
         f"loaded {stats['files_loaded']} new, "
         f"{stats['rows_inserted']} biomarker rows inserted"
     )
+    for err in stats.get("errors", []):
+        typer.echo(f"  Error: {err}", err=True)
 
 
 @app.command()
@@ -167,6 +169,8 @@ def run(
     # Extract (if PDF provided)
     if pdf:
         extract(pdf=pdf, method=method)
+    else:
+        typer.echo("No --pdf provided, skipping extraction")
 
     # Load
     load()

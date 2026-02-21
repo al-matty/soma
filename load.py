@@ -120,17 +120,22 @@ def load_all(db_path: Path = DB_PATH, raw_dir: Path = RAW_DIR) -> dict:
 
     files_loaded = 0
     total_rows = 0
+    errors = []
     for f in json_files:
-        data = json.loads(f.read_text())
-        result = ExtractionResult(**data)
-        rows = load_extraction(con, result)
-        if rows > 0:
-            files_loaded += 1
-            total_rows += rows
+        try:
+            data = json.loads(f.read_text())
+            result = ExtractionResult(**data)
+            rows = load_extraction(con, result)
+            if rows > 0:
+                files_loaded += 1
+                total_rows += rows
+        except (json.JSONDecodeError, ValueError) as e:
+            errors.append(f"{f.name}: {e}")
 
     con.close()
     return {
         "files_found": len(json_files),
         "files_loaded": files_loaded,
         "rows_inserted": total_rows,
+        "errors": errors,
     }
