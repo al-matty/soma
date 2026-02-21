@@ -1,0 +1,79 @@
+{
+  "biomarkers": [
+    {
+      "report_date": "2025-11-15",
+      "provider": "Quest Diagnostics",
+      "biomarker_name": "Glucose (Fasting)",
+      "value": "95",
+      "unit": "mg/dL",
+      "reference_range_low": "65",
+      "reference_range_high": "99",
+      "loinc_code": "1558-6",
+      "notes": null
+    },
+    {
+      "report_date": "2025-11-15",
+      "provider": "Quest Diagnostics",
+      "biomarker_name": "Total Cholesterol",
+      "value": "195",
+      "unit": "mg/dL",
+      "reference_range_low": "100",
+      "reference_range_high": "199",
+      "loinc_code": "2093-3",
+      "notes": null
+    },
+    {
+      "report_date": "2025-11-15",
+      "provider": "Quest Diagnostics",
+      "biomarker_name": "LDL Cholesterol",
+      "value": "145",
+      "unit": "mg/dL",
+      "reference_range_low": null,
+      "reference_range_high": "100",
+      "loinc_code": "2089-1",
+      "notes": "HIGH"
+    },
+    {
+      "report_date": "2025-11-15",
+      "provider": "Quest Diagnostics",
+      "biomarker_name": "HDL Cholesterol",
+      "value": "55",
+      "unit": "mg/dL",
+      "reference_range_low": "39",
+      "reference_range_high": null,
+      "loinc_code": "2085-9",
+      "notes": null
+    },
+    {
+      "report_date": "2025-11-15",
+      "provider": "Quest Diagnostics",
+      "biomarker_name": "Vitamin D (25-OH)",
+      "value": "22",
+      "unit": "ng/mL",
+      "reference_range_low": "30",
+      "reference_range_high": "100",
+      "loinc_code": "1989-3",
+      "notes": "LOW"
+    },
+    {
+      "report_date": "2025-11-15",
+      "provider": "Quest Diagnostics",
+      "biomarker_name": "CRP (hs)",
+      "value": "<0.1",
+      "unit": "mg/L",
+      "reference_range_low": null,
+      "reference_range_high": "3.0",
+      "loinc_code": "30522-7",
+      "notes": "Below detection limit"
+    }
+  ],
+  "document_summary": "# Blood Panel - Quest Diagnostics\n**Date:** 2025-11-15\n**Provider:** Quest Diagnostics\n\n## Flagged Results\n- **LDL Cholesterol:** 145 mg/dL (HIGH, ref: <100)\n- **Vitamin D (25-OH):** 22 ng/mL (LOW, ref: 30-100)\n\n## Notes\n- CRP below detection limit (<0.1 mg/L)",
+  "metadata": {
+    "report_type": "blood_panel",
+    "tags": ["lipids", "vitamins", "inflammation"],
+    "baseline_candidates": []
+  },
+  "source_file": "2025-11-15_blood_panel_quest.pdf",
+  "extracted_at": "2025-11-16T10:30:00",
+  "extraction_method": "api"
+}

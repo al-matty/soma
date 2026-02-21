@@ -1,0 +1,38 @@
+{
+  "biomarkers": [
+    {
+      "report_date": "2026-01-15",
+      "provider": "GeneDx",
+      "biomarker_name": "TNF-alpha",
+      "value": "8.5",
+      "unit": "pg/mL",
+      "reference_range_low": null,
+      "reference_range_high": "8.1",
+      "loinc_code": "13900-6",
+      "notes": "Elevated, consistent with GA genotype"
+    },
+    {
+      "report_date": "2026-01-15",
+      "provider": "GeneDx",
+      "biomarker_name": "IL-6",
+      "value": "3.2",
+      "unit": "pg/mL",
+      "reference_range_low": null,
+      "reference_range_high": "5.0",
+      "loinc_code": "26881-3",
+      "notes": null
+    }
+  ],
+  "document_summary": "# Genetic Test - Periodontitis Risk Panel\n**Date:** 2026-01-15\n**Provider:** GeneDx\n\n## Key Findings\n- TNF-alpha -308 G/A polymorphism (GA genotype) detected\n- Elevated inflammatory response profile\n- Increased risk for aggressive periodontitis\n\n## Clinical Implications\n- Enhanced inflammatory response may affect healing\n- Consider anti-inflammatory protocols",
+  "metadata": {
+    "report_type": "genetics",
+    "tags": ["periodontitis", "genetics", "inflammation"],
+    "baseline_candidates": [
+      "TNF-alpha -308 G/A polymorphism (GA genotype)",
+      "Periodontitis risk (genetic)"
+    ]
+  },
+  "source_file": "2026-01-15_genetics_periodontitis.pdf",
+  "extracted_at": "2026-01-16T14:00:00",
+  "extraction_method": "api"
+}
