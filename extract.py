@@ -21,7 +21,7 @@ def _read_prompt() -> str:
     return (PROMPTS_DIR / "extraction_prompt.txt").read_text()
 
 
-def _write_outputs(result: ExtractionResult) -> dict:
+def _write_outputs(result: ExtractionResult) -> dict[str, str]:
     """Write JSON and markdown outputs. Returns paths written."""
     # Determine filenames from extraction data
     report_date = result.biomarkers[0].report_date if result.biomarkers else "unknown"
@@ -47,7 +47,7 @@ def _write_outputs(result: ExtractionResult) -> dict:
     return {"json_path": str(json_path), "markdown_path": str(md_path)}
 
 
-def extract_api(pdf_path: Path) -> ExtractionResult:
+def extract_api(pdf_path: Path) -> tuple[ExtractionResult, dict[str, str]]:
     """Extract biomarkers from a PDF via Claude API."""
     import anthropic
 
@@ -101,7 +101,7 @@ def extract_api(pdf_path: Path) -> ExtractionResult:
     return result, paths
 
 
-def extract_manual(json_text: str, source_file: str) -> ExtractionResult:
+def extract_manual(json_text: str, source_file: str) -> tuple[ExtractionResult, dict[str, str]]:
     """Parse manually provided JSON from a Claude chat extraction."""
     data = json.loads(json_text)
 
