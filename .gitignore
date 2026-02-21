@@ -234,8 +234,9 @@ docs/findings/*
 docs/profile/*
 !docs/profile/.gitkeep
 
-# dbt credentials
+# dbt credentials and artifacts
 dbt_project/profiles.yml
+dbt_project/.user.yml
 dbt_project/target/
 dbt_project/logs/
 dbt_project/dbt_packages/
