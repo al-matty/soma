@@ -1,16 +1,25 @@
 """Baseline updater - proposes derived baseline updates via Claude."""
 
+import difflib
+
 import duckdb
 import yaml
 
 from config import ANTHROPIC_API_KEY, DB_PATH, EXTRACTION_MODEL, PROFILE_DIR
 
 
+def _query(con: duckdb.DuckDBPyConnection, sql: str) -> list[dict]:
+    """Run a query and return results as list of dicts."""
+    result = con.execute(sql)
+    columns = [desc[0] for desc in result.description]
+    return [dict(zip(columns, row)) for row in result.fetchall()]
+
+
 def get_latest_findings(db_path=DB_PATH) -> str:
     """Get a summary of recent findings from the database."""
     con = duckdb.connect(str(db_path), read_only=True)
 
-    rows = con.execute("""
+    rows = _query(con, """
         select
             biomarker_key,
             value_si,
@@ -22,7 +31,7 @@ def get_latest_findings(db_path=DB_PATH) -> str:
             category
         from main.fct_biomarkers
         order by report_date desc, biomarker_key
-    """).fetchall()
+    """)
 
     con.close()
 
@@ -31,8 +40,8 @@ def get_latest_findings(db_path=DB_PATH) -> str:
 
     lines = ["Recent biomarker results:"]
     for r in rows:
-        ref = "in range" if r[5] else "OUT OF RANGE" if r[5] is not None else "unknown"
-        lines.append(f"  {r[3]} | {r[0]}: {r[1]:.2f} {r[2]} ({r[4]}) - {ref}")
+        ref = "in range" if r["is_within_ref_range"] else "OUT OF RANGE" if r["is_within_ref_range"] is not None else "unknown"
+        lines.append(f"  {r['report_date']} | {r['biomarker_key']}: {r['value_si']:.2f} {r['unit_si']} ({r['provider']}) - {ref}")
 
     return "\n".join(lines)
 
@@ -81,8 +90,6 @@ def show_diff(current: str, proposed: str) -> str:
     proposed_lines = proposed.splitlines()
 
     diff_lines = []
-    import difflib
-
     for line in difflib.unified_diff(
         current_lines, proposed_lines,
         fromfile="current baseline.yml",
