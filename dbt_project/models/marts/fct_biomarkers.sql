@@ -57,9 +57,8 @@ joined as (
         case
             when m.optimal_range_low_si is not null
                  and m.optimal_range_high_si is not null
-                 and m.conversion_factor is not null
-                then (s.value_numeric * m.conversion_factor) >= m.optimal_range_low_si
-                     and (s.value_numeric * m.conversion_factor) <= m.optimal_range_high_si
+                then (s.value_numeric * coalesce(m.conversion_factor, 1.0)) >= m.optimal_range_low_si
+                     and (s.value_numeric * coalesce(m.conversion_factor, 1.0)) <= m.optimal_range_high_si
             else null
         end as is_within_optimal_range,
 
