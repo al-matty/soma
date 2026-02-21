@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: fct_biomarkers
+    description: SI-converted biomarker facts with range compliance flags
+    columns:
+      - name: lab_result_id
+        description: Primary key
+        tests:
+          - unique
+          - not_null
+      - name: biomarker_key
+        tests:
+          - not_null
+      - name: value_si
+        description: Value converted to SI units
+      - name: is_within_ref_range
+        description: Whether value falls within provider reference range
+      - name: is_within_optimal_range
+        description: Whether SI value falls within longevity-optimized range
+
+  - name: dim_documents
+    description: Document catalog with biomarker counts
+    columns:
+      - name: document_id
+        description: Primary key
+        tests:
+          - unique
+          - not_null
+      - name: source_file
+        tests:
+          - unique
+          - not_null
