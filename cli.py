@@ -1,8 +1,10 @@
 """Soma CLI - personal health data pipeline."""
 
+import subprocess
+
 import typer
 
-from config import DB_PATH, RAW_DIR
+from config import DB_PATH, DBT_DIR, RAW_DIR
 
 app = typer.Typer(help="Soma - personal health data pipeline")
 
@@ -28,6 +30,24 @@ def load(
         f"loaded {stats['files_loaded']} new, "
         f"{stats['rows_inserted']} biomarker rows inserted"
     )
+
+
+@app.command()
+def transform() -> None:
+    """Run dbt pipeline: seed, run, and snapshot."""
+    dbt_commands = [
+        ["dbt", "seed"],
+        ["dbt", "run"],
+        ["dbt", "snapshot"],
+    ]
+    for cmd in dbt_commands:
+        typer.echo(f"Running: {' '.join(cmd)}")
+        result = subprocess.run(cmd, cwd=str(DBT_DIR), capture_output=True, text=True)
+        if result.returncode != 0:
+            typer.echo(result.stdout)
+            typer.echo(result.stderr)
+            raise typer.Exit(1)
+    typer.echo("Transform complete")
 
 
 if __name__ == "__main__":
