@@ -1,0 +1,16 @@
+# Lifestyle profile - current habits and routines
+# Copy to profile/lifestyle.yml and fill in your data
+
+diet:
+  approach: ""  # e.g. "Mediterranean, high protein"
+  restrictions: []
+    # - "lactose-intolerant"
+  notes: ""
+
+exercise:
+  routine: ""  # e.g. "4x/week strength, 2x cardio"
+  notes: ""
+
+sleep:
+  average_hours: 0
+  notes: ""  # e.g. "Consistent schedule, 22:30-06:00"

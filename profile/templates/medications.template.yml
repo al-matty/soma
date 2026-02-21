@@ -1,0 +1,10 @@
+# Medication log - current and past medications
+# Copy to profile/medications.yml and fill in your data
+
+# - name: Ibuprofen
+#   dose: "400mg"
+#   frequency: as_needed  # daily, weekly, as_needed
+#   start_date: YYYY-MM-DD
+#   end_date: null  # null = ongoing
+#   notes: "Occasional use for headaches"
+[]

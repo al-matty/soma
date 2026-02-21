@@ -1,0 +1,14 @@
+# Experiment log - time-bounded health protocols
+# Copy to profile/experiments.yml and fill in your data
+
+# - name: "16:8 Intermittent Fasting"
+#   start_date: YYYY-MM-DD
+#   end_date: null  # null = ongoing
+#   hypothesis: "Improve fasting glucose and insulin sensitivity"
+#   relevant_biomarkers:
+#     - "Glucose (Fasting)"
+#     - "Insulin (Fasting)"
+#     - "HbA1c"
+#   protocol: "Eating window 12:00-20:00"
+#   notes: ""
+[]

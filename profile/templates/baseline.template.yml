@@ -1,0 +1,32 @@
+# Baseline profile - static facts and agent-derived findings
+# Copy to profile/baseline.yml and fill in your data
+
+# --- User-maintained (rarely changes) ---
+static:
+  date_of_birth: "YYYY-MM-DD"
+  sex: male  # male or female
+  height_cm: 0
+  blood_type: ""  # e.g. "A+", "O-"
+  known_allergies: []
+    # - "Penicillin"
+
+# --- Agent-maintained (derived from findings) ---
+# Updated via `soma update-baseline` with human review
+derived:
+  genetic_variants: []
+    # - finding: "Description of genetic variant"
+    #   implication: "Clinical significance"
+    #   relevance: "Which biomarkers/decisions this affects"
+    #   source_report: "filename.pdf"
+    #   discovered_date: YYYY-MM-DD
+
+  chronic_patterns: []
+    # - finding: "Description of persistent pattern"
+    #   based_on: "e.g. 4 of 5 reports since 2023"
+    #   last_confirmed: YYYY-MM-DD
+
+  conditions: []
+    # - name: "Condition name"
+    #   status: active  # active, resolved, monitoring
+    #   discovered_date: YYYY-MM-DD
+    #   source_report: "filename.pdf"

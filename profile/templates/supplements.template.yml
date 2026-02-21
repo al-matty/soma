@@ -1,0 +1,10 @@
+# Supplement log - current and past supplements
+# Copy to profile/supplements.yml and fill in your data
+
+# - name: Vitamin D3
+#   dose: "5000 IU"
+#   frequency: daily  # daily, weekly, as_needed
+#   start_date: YYYY-MM-DD
+#   end_date: null  # null = ongoing
+#   notes: "with K2 (MK-7, 200mcg)"
+[]
