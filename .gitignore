@@ -219,3 +219,23 @@ __marimo__/
 .DS_Store
 .claude/
 CLAUDE.md
+
+# Personal health data
+data/raw/*.json
+data/soma.duckdb
+data/soma.duckdb.wal
+profile/baseline.yml
+profile/lifestyle.yml
+profile/supplements.yml
+profile/medications.yml
+profile/experiments.yml
+docs/findings/*
+!docs/findings/.gitkeep
+docs/profile/*
+!docs/profile/.gitkeep
+
+# dbt credentials
+dbt_project/profiles.yml
+dbt_project/target/
+dbt_project/logs/
+dbt_project/dbt_packages/
