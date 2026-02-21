@@ -88,5 +88,16 @@ def extract(
     typer.echo(f"Markdown: {paths['markdown_path']}")
 
 
+@app.command()
+def render() -> None:
+    """Generate profile markdown from dbt marts."""
+    from render import render_all
+
+    paths = render_all()
+    typer.echo(f"Rendered {len(paths)} profile files:")
+    for p in paths:
+        typer.echo(f"  {p}")
+
+
 if __name__ == "__main__":
     app()
