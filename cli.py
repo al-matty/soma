@@ -50,5 +50,43 @@ def transform() -> None:
     typer.echo("Transform complete")
 
 
+@app.command()
+def extract(
+    pdf: str = typer.Option(None, help="Path to PDF lab report"),
+    method: str = typer.Option("api", help="Extraction method: 'api' or 'manual'"),
+) -> None:
+    """Extract biomarkers from a lab report PDF."""
+    from pathlib import Path
+
+    from extract import extract_api, extract_manual
+
+    if method == "api":
+        if not pdf:
+            typer.echo("Error: --pdf is required for API extraction")
+            raise typer.Exit(1)
+        pdf_path = Path(pdf)
+        if not pdf_path.exists():
+            typer.echo(f"Error: PDF not found: {pdf}")
+            raise typer.Exit(1)
+        typer.echo(f"Extracting from {pdf_path.name} via API...")
+        result, paths = extract_api(pdf_path)
+
+    elif method == "manual":
+        source_file = pdf or typer.prompt("Source PDF filename")
+        typer.echo("Paste the JSON extraction below (end with Ctrl+D):")
+        import sys
+
+        json_text = sys.stdin.read()
+        result, paths = extract_manual(json_text, source_file)
+
+    else:
+        typer.echo(f"Error: unknown method '{method}'. Use 'api' or 'manual'.")
+        raise typer.Exit(1)
+
+    typer.echo(f"Extracted {len(result.biomarkers)} biomarkers")
+    typer.echo(f"JSON:     {paths['json_path']}")
+    typer.echo(f"Markdown: {paths['markdown_path']}")
+
+
 if __name__ == "__main__":
     app()

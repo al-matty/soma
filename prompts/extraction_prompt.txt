@@ -1,0 +1,33 @@
+Extract all data from this lab report. Return a JSON object with two keys:
+
+1. "biomarkers": a JSON array where each entry has:
+{
+  "report_date": "YYYY-MM-DD",
+  "provider": "<lab provider name>",
+  "biomarker_name": "<standard biomarker name>",
+  "value": "<raw value as-is, including any < or > prefixes>",
+  "unit": "<unit as printed on report>",
+  "reference_range_low": "<lower bound or null>",
+  "reference_range_high": "<upper bound or null>",
+  "loinc_code": "<LOINC code if known, else null>",
+  "notes": "<any relevant flags, e.g. 'hemolyzed sample'>"
+}
+
+2. "document_summary": a markdown string summarizing the full report, including:
+   - Report type, date, provider
+   - Key findings and flagged results
+   - Clinical notes or recommendations if present
+   - Any non-biomarker findings (genetic variants, imaging, narrative)
+
+3. "metadata": {
+   "report_type": "<blood_panel|genetics|radiology|specialist|prescription|other>",
+   "tags": ["<relevant tags>"],
+   "baseline_candidates": ["<any findings that are permanent medical facts, e.g. genetic variants, chronic conditions>"]
+}
+
+Rules:
+- Preserve original values and units exactly as printed. Do NOT convert units.
+- Use standard biomarker names (e.g., "Glucose, Fasting" not "Glu").
+- Include ALL biomarkers, not just flagged ones.
+- If a value has a prefix like "<0.1" or ">100", keep it as a string.
+- Return ONLY the JSON object, no commentary.
