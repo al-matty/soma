@@ -4,7 +4,7 @@ import subprocess
 
 import typer
 
-from config import DB_PATH, DBT_DIR, RAW_DIR
+from config import DB_PATH, DBT_DIR, PROFILE_DIR, RAW_DIR
 
 app = typer.Typer(help="Soma - personal health data pipeline")
 
@@ -97,6 +97,87 @@ def render() -> None:
     typer.echo(f"Rendered {len(paths)} profile files:")
     for p in paths:
         typer.echo(f"  {p}")
+
+
+@app.command()
+def update_baseline() -> None:
+    """Propose updates to the derived baseline via Claude."""
+    from baseline import get_latest_findings, propose_updates, show_diff
+
+    baseline_path = PROFILE_DIR / "baseline.yml"
+    current = baseline_path.read_text() if baseline_path.exists() else ""
+
+    typer.echo("Analyzing latest findings...")
+    proposed = propose_updates()
+
+    if proposed is None:
+        typer.echo("ANTHROPIC_API_KEY not set. Cannot propose updates.")
+        raise typer.Exit(1)
+
+    diff = show_diff(current, proposed)
+    typer.echo("\nProposed changes:")
+    typer.echo(diff)
+
+    if diff == "(no changes)":
+        typer.echo("\nNo updates needed.")
+        return
+
+    if typer.confirm("\nApply these changes?"):
+        baseline_path.parent.mkdir(parents=True, exist_ok=True)
+        baseline_path.write_text(proposed)
+        typer.echo(f"Updated {baseline_path}")
+    else:
+        typer.echo("Changes discarded.")
+
+
+@app.command()
+def status() -> None:
+    """Show pipeline status summary."""
+    import duckdb
+
+    con = duckdb.connect(str(DB_PATH), read_only=True)
+
+    try:
+        docs = con.execute("SELECT COUNT(*), MIN(report_date), MAX(report_date) FROM raw.documents").fetchone()
+        biomarkers = con.execute("SELECT COUNT(DISTINCT biomarker_name_raw) FROM raw.lab_results").fetchone()
+        rows = con.execute("SELECT COUNT(*) FROM raw.lab_results").fetchone()
+    except duckdb.CatalogException:
+        typer.echo("No data loaded yet. Run 'soma load' first.")
+        raise typer.Exit(1)
+
+    typer.echo(f"Reports:    {docs[0]} ({docs[1]} to {docs[2]})")
+    typer.echo(f"Biomarkers: {biomarkers[0]} unique, {rows[0]} total measurements")
+
+    # Check profile files
+    profile_files = ["baseline.yml", "lifestyle.yml", "supplements.yml", "medications.yml", "experiments.yml"]
+    existing = [f for f in profile_files if (PROFILE_DIR / f).exists()]
+    typer.echo(f"Profile:    {len(existing)}/{len(profile_files)} files configured")
+
+    con.close()
+
+
+@app.command()
+def run(
+    pdf: str = typer.Option(None, help="Path to PDF lab report"),
+    method: str = typer.Option("api", help="Extraction method: 'api' or 'manual'"),
+) -> None:
+    """Run the full pipeline: extract -> load -> transform -> render."""
+    from pathlib import Path
+
+    # Extract (if PDF provided)
+    if pdf:
+        extract(pdf=pdf, method=method)
+
+    # Load
+    load()
+
+    # Transform
+    transform()
+
+    # Render
+    render()
+
+    typer.echo("\nPipeline complete!")
 
 
 if __name__ == "__main__":
