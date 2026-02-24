@@ -221,6 +221,7 @@ __marimo__/
 CLAUDE.md
 
 # Personal health data
+/data
 data/raw/*.json
 data/soma.duckdb
 data/soma.duckdb.wal

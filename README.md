@@ -2,6 +2,8 @@
 
 A local-first personal health data pipeline that turns scattered lab report PDFs into a structured, queryable health record. A "biological digital twin" you fully own and control.
 
+![Soma pipeline diagram](soma-diagram.png)
+
 ## Why
 
 Most people accumulate lab reports from different providers over years, in different formats, with different units and reference ranges. The reports sit in folders or email attachments, making it hard to spot trends, compare values across time, or prepare meaningfully for a doctor's visit.
@@ -55,6 +57,49 @@ python cli.py run --pdf /path/to/report.pdf
 2. **Load** - JSON files are ingested into DuckDB raw tables (idempotent by source file)
 3. **Transform** - dbt cleans, deduplicates, converts to SI units, and flags range compliance
 4. **Render** - Generates markdown snapshots of your current biomarker status, timeline, and medical history
+
+## Example Run
+
+You set up your API key once, then run a single command:
+
+```bash
+python cli.py run --pdf /path/to/your_bloodwork.pdf
+```
+
+`run` chains four steps automatically:
+
+**Step 1: Extract** - Reads your PDF, base64-encodes it, sends it to Claude Sonnet with the extraction prompt. Claude returns structured JSON (biomarker names, values, units, reference ranges, LOINC codes) and a markdown summary. Two files are written:
+- `data/raw/2026-02-24_blood_panel_<provider>_<timestamp>.json` - the structured data
+- `docs/findings/2026/2026-02-24_blood_panel_<provider>.md` - the narrative summary
+
+**Step 2: Load** - Reads the JSON, validates it against the Pydantic schema, and inserts rows into DuckDB (`data/soma.duckdb`):
+- `raw.lab_results` - one row per biomarker (value, unit, reference range, as-is from the report)
+- `raw.documents` - one row for the report itself (date, provider, type, biomarker count)
+- Idempotent - if you run it again, it skips already-loaded files
+
+**Step 3: Transform** - dbt seed loads the 40-biomarker reference table with SI conversion factors. dbt run builds the analytical views:
+- `stg_lab_results` - cleans values, parses detection limits (`<0.1` -> `0.05` + flag), deduplicates
+- `fct_biomarkers` - joins with the seed, converts to SI units, flags values outside reference/optimal ranges
+- `dim_documents` - document catalog
+- dbt snapshot captures reference ranges for SCD2 tracking
+
+**Step 4: Render** - Queries the dbt marts and generates three markdown files in `docs/profile/`:
+- `current_snapshot.md` - latest value per biomarker, grouped by category, with trend arrows and range flags
+- `timeline.md` - chronological list of all reports
+- `medical_history.md` - conditions and findings from `profile/baseline.yml` (if it exists)
+
+### What gets created
+
+| Artifact | Type | Gitignored? |
+|----------|------|-------------|
+| `data/raw/<date>_<provider>_<time>.json` | New file | Yes |
+| `docs/findings/2026/<date>_blood_panel_<provider>.md` | New file | Yes |
+| `data/soma.duckdb` | Updated (new rows in raw tables, views refreshed) | Yes |
+| `docs/profile/current_snapshot.md` | Regenerated | Yes |
+| `docs/profile/timeline.md` | Regenerated | Yes |
+| `docs/profile/medical_history.md` | Regenerated | Yes |
+
+Profile YAMLs (`profile/*.yml`) are not touched by the pipeline. Those are only written by you (manually copying templates and filling in data) or by `soma update-baseline` (which calls Claude to propose derived findings, then asks you to approve the diff).
 
 ## Profile Layer
 
