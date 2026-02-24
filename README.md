@@ -43,6 +43,7 @@ python cli.py run --pdf /path/to/report.pdf
 
 | Command | Description |
 |---------|-------------|
+| **`run`** | **Full pipeline: extract, load, transform, render** |
 | `extract` | Extract biomarkers from a PDF (API or manual) |
 | `load` | Ingest JSON files into DuckDB |
 | `transform` | Run dbt pipeline (seed, run, snapshot) |
@@ -53,6 +54,8 @@ python cli.py run --pdf /path/to/report.pdf
 | `reload` | Delete and re-load data for a source file |
 | `reset` | Delete the database and start fresh |
 | `run` | Full pipeline: extract, load, transform, render |
+
+Use `python cli.py <command> --help` to see options for any command, e.g. `python cli.py extract --help`.
 
 ## How It Works
 

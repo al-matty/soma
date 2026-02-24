@@ -1,7 +1,24 @@
-"""Soma CLI - personal health data pipeline."""
+"""Soma CLI - personal health data pipeline.
+
+Commands:
+    extract     Extract biomarkers from a PDF lab report (API or manual).
+    load        Ingest extracted JSON files from data/raw/ into DuckDB.
+    transform   Run dbt pipeline: seed, run, and snapshot.
+    render      Generate profile markdown (snapshot, timeline, history) from dbt marts.
+    update-baseline  Propose derived baseline updates via Claude.
+    status      Show pipeline summary (report count, biomarker count, profile files).
+    query       Run an arbitrary SQL query against the DuckDB database.
+    reload      Delete all data for a source file and re-load from corrected JSON.
+    reset       Delete the DuckDB database file to start fresh.
+    run         Full pipeline: extract -> load -> transform -> render.
+
+Usage:
+    python cli.py --help                  Show all commands.
+    python cli.py <command> --help        Show options for a specific command.
+    python cli.py extract --help          Example: show extract options (--pdf, --method).
+"""
 
 import subprocess
-
 import typer
 
 from config import DB_PATH, DBT_DIR, PROFILE_DIR, RAW_DIR
