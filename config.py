@@ -37,4 +37,4 @@ PROMPTS_DIR = ROOT_DIR / "prompts"
 
 # API configuration
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
-EXTRACTION_MODEL = "claude-sonnet-4-20250514"
+EXTRACTION_MODEL = "claude-opus-4-6"    # "claude-sonnet-4-20250514"

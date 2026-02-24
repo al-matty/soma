@@ -50,16 +50,16 @@ python cli.py run --pdf /path/to/report.pdf
 | 2 | `load` | Ingest JSON files into DuckDB |
 | 3 | `transform` | Run dbt pipeline (seed, run, snapshot) |
 | 4 | `render` | Generate profile markdown from dbt marts |
-| | `update-baseline` | Propose derived baseline updates via Claude |
+| (5) | `update-baseline` | Propose derived baseline updates via Claude |
 
-### Organize data
+### Maintain database
 
-| Step | Command | Description |
-|------|---------|-------------|
-| | `status` | Show pipeline summary |
-| | `query` | Run a SQL query against DuckDB |
-| | `reload` | Delete and re-load data for a source file |
-| | `reset` | Delete the database and start fresh |
+| Command | Description |
+|---------|-------------|
+| `status` | Show pipeline summary |
+| `query` | Run a SQL query against DuckDB |
+| `reload` | Delete and re-load data for a source file |
+| `reset` | Delete the database and start fresh |
 
 Use `python cli.py <command> --help` to see options for any command, e.g. `python cli.py extract --help`.
 

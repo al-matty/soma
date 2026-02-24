@@ -30,4 +30,7 @@ Rules:
 - Use standard biomarker names (e.g., "Glucose, Fasting" not "Glu").
 - Include ALL biomarkers, not just flagged ones.
 - If a value has a prefix like "<0.1" or ">100", keep it as a string.
+- Double-check every numeric value against the PDF. Pay close attention to decimal points, digit groupings, and similar-looking characters (0/O, 1/l, 5/S).
+- For each biomarker, verify the unit matches what's printed next to that specific value.
+- If a value is hard to read, note the uncertainty in the "notes" field.
 - Return ONLY the JSON object, no commentary.

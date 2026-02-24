@@ -48,7 +48,7 @@ def ensure_raw_tables(con: duckdb.DuckDBPyConnection) -> None:
 
 def load_extraction(con: duckdb.DuckDBPyConnection, result: ExtractionResult) -> int:
     """Load a single ExtractionResult into DuckDB. Returns number of rows inserted."""
-    # Check if already loaded (idempotent by source_file)
+    # Check if already loaded (loading is idempotent by source_file -> known files will be skipped)
     existing = con.execute(
         "SELECT COUNT(*) FROM raw.documents WHERE source_file = ?",
         [result.source_file],
