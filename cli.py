@@ -73,6 +73,7 @@ def transform() -> None:
 def extract(
     pdf: str = typer.Option(None, help="Path to PDF lab report"),
     method: str = typer.Option("api", help="Extraction method: 'api' or 'manual'"),
+    save_redacted: bool = typer.Option(False, "--save-redacted", help="Save redacted PDF to data/raw/ for visual verification"),
 ) -> None:
     """Extract biomarkers from a lab report PDF."""
     from pathlib import Path
@@ -88,7 +89,14 @@ def extract(
             typer.echo(f"Error: PDF not found: {pdf}")
             raise typer.Exit(1)
         typer.echo(f"Extracting from {pdf_path.name} via API...")
-        result, paths = extract_api(pdf_path)
+        result, paths = extract_api(pdf_path, save_redacted=save_redacted)
+
+        if save_redacted:
+            redacted_path = RAW_DIR / f"{pdf_path.stem}_redacted.pdf"
+            if redacted_path.exists():
+                typer.echo(f"Redacted: {redacted_path}")
+            else:
+                typer.echo("No redaction applied (profile/redact.yml missing or empty)")
 
     elif method == "manual":
         source_file = pdf or typer.prompt("Source PDF filename")
@@ -246,13 +254,12 @@ def reset(
 def run(
     pdf: str = typer.Option(None, help="Path to PDF lab report"),
     method: str = typer.Option("api", help="Extraction method: 'api' or 'manual'"),
+    save_redacted: bool = typer.Option(False, "--save-redacted", help="Save redacted PDF to data/raw/ for visual verification"),
 ) -> None:
     """Run the full pipeline: extract -> load -> transform -> render."""
-    from pathlib import Path
-
     # Extract (if PDF provided)
     if pdf:
-        extract(pdf=pdf, method=method)
+        extract(pdf=pdf, method=method, save_redacted=save_redacted)
     else:
         typer.echo("No --pdf provided, skipping extraction")
 

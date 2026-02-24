@@ -22,21 +22,21 @@ def _read_prompt() -> str:
     return (PROMPTS_DIR / "extraction_prompt.txt").read_text()
 
 
-def _redact_pdf(pdf_path: Path) -> bytes:
-    """Redact PII strings from PDF before sending to API. Returns PDF bytes.
+def _redact_pdf(pdf_path: Path) -> tuple[bytes, bool]:
+    """Redact PII strings from PDF before sending to API.
 
-    Reads redaction strings from profile/redact.yml. If the file doesn't exist
-    or has no entries, returns the original PDF bytes unchanged.
+    Returns (pdf_bytes, was_redacted). If profile/redact.yml doesn't exist
+    or has no entries, returns original bytes with was_redacted=False.
     """
     redact_path = PROFILE_DIR / "redact.yml"
     if not redact_path.exists():
-        return pdf_path.read_bytes()
+        return pdf_path.read_bytes(), False
 
     import yaml
 
     strings = yaml.safe_load(redact_path.read_text()).get("redact", [])
     if not strings:
-        return pdf_path.read_bytes()
+        return pdf_path.read_bytes(), False
 
     import pymupdf
 
@@ -49,7 +49,7 @@ def _redact_pdf(pdf_path: Path) -> bytes:
 
     redacted_bytes = doc.tobytes()
     doc.close()
-    return redacted_bytes
+    return redacted_bytes, True
 
 
 def _write_outputs(result: ExtractionResult) -> dict[str, str]:
@@ -78,7 +78,7 @@ def _write_outputs(result: ExtractionResult) -> dict[str, str]:
     return {"json_path": str(json_path), "markdown_path": str(md_path)}
 
 
-def extract_api(pdf_path: Path) -> tuple[ExtractionResult, dict[str, str]]:
+def extract_api(pdf_path: Path, save_redacted: bool = False) -> tuple[ExtractionResult, dict[str, str]]:
     """Extract biomarkers from a PDF via Claude API."""
     import anthropic
 
@@ -91,7 +91,12 @@ def extract_api(pdf_path: Path) -> tuple[ExtractionResult, dict[str, str]]:
     prompt = _read_prompt()
 
     # Read and encode PDF (with PII redaction if configured)
-    pdf_bytes = _redact_pdf(pdf_path)
+    pdf_bytes, was_redacted = _redact_pdf(pdf_path)
+
+    if save_redacted and was_redacted:
+        RAW_DIR.mkdir(parents=True, exist_ok=True)
+        redacted_path = RAW_DIR / f"{pdf_path.stem}_redacted.pdf"
+        redacted_path.write_bytes(pdf_bytes)
     pdf_b64 = base64.b64encode(pdf_bytes).decode("utf-8")
 
     response = client.messages.create(
