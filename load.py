@@ -109,6 +109,17 @@ def load_extraction(con: duckdb.DuckDBPyConnection, result: ExtractionResult) ->
     return len(result.biomarkers)
 
 
+def delete_source(con: duckdb.DuckDBPyConnection, source_file: str) -> int:
+    """Delete all raw data for a given source_file. Returns rows deleted."""
+    rows = con.execute(
+        "SELECT COUNT(*) FROM raw.lab_results WHERE source_file = ?",
+        [source_file],
+    ).fetchone()[0]
+    con.execute("DELETE FROM raw.lab_results WHERE source_file = ?", [source_file])
+    con.execute("DELETE FROM raw.documents WHERE source_file = ?", [source_file])
+    return rows
+
+
 def load_all(db_path: Path = DB_PATH, raw_dir: Path = RAW_DIR) -> dict:
     """Load all JSON files from raw_dir into DuckDB. Returns summary stats."""
     json_files = sorted(raw_dir.glob("*.json"))

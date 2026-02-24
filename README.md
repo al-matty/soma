@@ -49,6 +49,9 @@ python cli.py run --pdf /path/to/report.pdf
 | `render` | Generate profile markdown from dbt marts |
 | `update-baseline` | Propose derived baseline updates via Claude |
 | `status` | Show pipeline summary |
+| `query` | Run a SQL query against DuckDB |
+| `reload` | Delete and re-load data for a source file |
+| `reset` | Delete the database and start fresh |
 | `run` | Full pipeline: extract, load, transform, render |
 
 ## How It Works
@@ -110,3 +113,20 @@ Copy templates from `profile/templates/` to `profile/` and fill in your data:
 - `supplements.yml` - Current and past supplements
 - `medications.yml` - Current and past medications
 - `experiments.yml` - Time-bounded health protocols
+
+## Data Access
+
+Query the database directly from the CLI:
+
+```bash
+python cli.py query "SELECT * FROM fct_biomarkers WHERE report_date = '2026-02-24'"
+python cli.py query "SELECT source_file, COUNT(*) FROM raw.lab_results GROUP BY source_file"
+```
+
+For interactive analysis in Python, load any table as a pandas DataFrame:
+
+```python
+import duckdb
+con = duckdb.connect("data/soma.duckdb", read_only=True)
+df = con.sql("SELECT * FROM fct_biomarkers").df()
+```

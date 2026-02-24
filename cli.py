@@ -159,6 +159,73 @@ def status() -> None:
 
 
 @app.command()
+def query(
+    sql: str = typer.Argument(..., help="SQL query to run"),
+) -> None:
+    """Run a SQL query against the DuckDB database."""
+    import duckdb
+
+    con = duckdb.connect(str(DB_PATH), read_only=True)
+    try:
+        result = con.sql(sql)
+        result.show()
+    except duckdb.Error as e:
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(1)
+    finally:
+        con.close()
+
+
+@app.command()
+def reload(
+    source_file: str = typer.Argument(..., help="source_file value to reload (original PDF filename)"),
+    db_path: str = typer.Option(str(DB_PATH), help="Path to DuckDB database"),
+    raw_dir: str = typer.Option(str(RAW_DIR), help="Path to raw JSON directory"),
+) -> None:
+    """Delete and re-load data for a specific source file."""
+    from pathlib import Path
+
+    import duckdb
+
+    from load import delete_source, load_all
+
+    con = duckdb.connect(str(db_path))
+    rows_deleted = delete_source(con, source_file)
+    con.close()
+
+    if rows_deleted == 0:
+        typer.echo(f"No existing data found for '{source_file}'")
+    else:
+        typer.echo(f"Deleted {rows_deleted} rows for '{source_file}'")
+
+    stats = load_all(db_path=Path(db_path), raw_dir=Path(raw_dir))
+    typer.echo(
+        f"Re-loaded: {stats['files_loaded']} file(s), "
+        f"{stats['rows_inserted']} rows inserted"
+    )
+
+
+@app.command()
+def reset(
+    db_path: str = typer.Option(str(DB_PATH), help="Path to DuckDB database"),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation prompt"),
+) -> None:
+    """Delete the DuckDB database and start fresh."""
+    from pathlib import Path
+
+    path = Path(db_path)
+    if not path.exists():
+        typer.echo("No database found. Nothing to reset.")
+        return
+
+    if not yes:
+        typer.confirm(f"Delete {path}?", abort=True)
+
+    path.unlink()
+    typer.echo(f"Deleted {path}")
+
+
+@app.command()
 def run(
     pdf: str = typer.Option(None, help="Path to PDF lab report"),
     method: str = typer.Option("api", help="Extraction method: 'api' or 'manual'"),
