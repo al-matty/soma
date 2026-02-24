@@ -1,0 +1,11 @@
+# Strings to redact from PDFs before sending to the Anthropic API.
+# Copy this file to profile/redact.yml and add your personal information.
+#
+# Each entry is searched on every page (case-insensitive).
+# Matches are covered with black rectangles in the copy sent to the API.
+# Your original PDF is never modified.
+redact:
+  - "Max Mustermann"
+  - "Musterstraße 1, 12345 Berlin"
+  - "01.01.1990"
+  - "Versichertennr: 123456789"

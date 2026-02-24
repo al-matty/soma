@@ -26,6 +26,7 @@ Extract all data from this lab report. Return a JSON object with two keys:
 }
 
 Rules:
+- Do not include patient name, address, date of birth, or insurance information in any output field.
 - Preserve original values and units exactly as printed. Do NOT convert units.
 - Use standard biomarker names (e.g., "Glucose, Fasting" not "Glu").
 - Include ALL biomarkers, not just flagged ones.

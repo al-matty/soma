@@ -12,6 +12,7 @@ from config import (
     ANTHROPIC_API_KEY,
     EXTRACTION_MODEL,
     FINDINGS_DIR,
+    PROFILE_DIR,
     PROMPTS_DIR,
     RAW_DIR,
 )
@@ -19,6 +20,36 @@ from config import (
 
 def _read_prompt() -> str:
     return (PROMPTS_DIR / "extraction_prompt.txt").read_text()
+
+
+def _redact_pdf(pdf_path: Path) -> bytes:
+    """Redact PII strings from PDF before sending to API. Returns PDF bytes.
+
+    Reads redaction strings from profile/redact.yml. If the file doesn't exist
+    or has no entries, returns the original PDF bytes unchanged.
+    """
+    redact_path = PROFILE_DIR / "redact.yml"
+    if not redact_path.exists():
+        return pdf_path.read_bytes()
+
+    import yaml
+
+    strings = yaml.safe_load(redact_path.read_text()).get("redact", [])
+    if not strings:
+        return pdf_path.read_bytes()
+
+    import pymupdf
+
+    doc = pymupdf.open(pdf_path)
+    for page in doc:
+        for s in strings:
+            for area in page.search_for(s):
+                page.add_redact_annot(area, fill=(0, 0, 0))
+        page.apply_redactions()
+
+    redacted_bytes = doc.tobytes()
+    doc.close()
+    return redacted_bytes
 
 
 def _write_outputs(result: ExtractionResult) -> dict[str, str]:
@@ -59,8 +90,8 @@ def extract_api(pdf_path: Path) -> tuple[ExtractionResult, dict[str, str]]:
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
     prompt = _read_prompt()
 
-    # Read and encode PDF
-    pdf_bytes = pdf_path.read_bytes()
+    # Read and encode PDF (with PII redaction if configured)
+    pdf_bytes = _redact_pdf(pdf_path)
     pdf_b64 = base64.b64encode(pdf_bytes).decode("utf-8")
 
     response = client.messages.create(
