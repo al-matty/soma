@@ -41,19 +41,25 @@ python cli.py run --pdf /path/to/report.pdf
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| **`run`** | **Full pipeline: extract, load, transform, render** |
-| `extract` | Extract biomarkers from a PDF (API or manual) |
-| `load` | Ingest JSON files into DuckDB |
-| `transform` | Run dbt pipeline (seed, run, snapshot) |
-| `render` | Generate profile markdown from dbt marts |
-| `update-baseline` | Propose derived baseline updates via Claude |
-| `status` | Show pipeline summary |
-| `query` | Run a SQL query against DuckDB |
-| `reload` | Delete and re-load data for a source file |
-| `reset` | Delete the database and start fresh |
-| `run` | Full pipeline: extract, load, transform, render |
+### Ingest data
+
+| Step | Command | Description |
+|------|---------|-------------|
+| 1-4 | **`run`** | **Full pipeline: extract, load, transform, render** |
+| 1 | `extract` | Extract biomarkers from a PDF (API or manual) |
+| 2 | `load` | Ingest JSON files into DuckDB |
+| 3 | `transform` | Run dbt pipeline (seed, run, snapshot) |
+| 4 | `render` | Generate profile markdown from dbt marts |
+| | `update-baseline` | Propose derived baseline updates via Claude |
+
+### Organize data
+
+| Step | Command | Description |
+|------|---------|-------------|
+| | `status` | Show pipeline summary |
+| | `query` | Run a SQL query against DuckDB |
+| | `reload` | Delete and re-load data for a source file |
+| | `reset` | Delete the database and start fresh |
 
 Use `python cli.py <command> --help` to see options for any command, e.g. `python cli.py extract --help`.
 
