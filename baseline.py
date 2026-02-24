@@ -22,6 +22,7 @@ def get_latest_findings(db_path=DB_PATH) -> str:
     rows = _query(con, """
         select
             biomarker_key,
+            value_raw,
             value_si,
             unit_si,
             report_date,
@@ -41,7 +42,9 @@ def get_latest_findings(db_path=DB_PATH) -> str:
     lines = ["Recent biomarker results:"]
     for r in rows:
         ref = "in range" if r["is_within_ref_range"] else "OUT OF RANGE" if r["is_within_ref_range"] is not None else "unknown"
-        lines.append(f"  {r['report_date']} | {r['biomarker_key']}: {r['value_si']:.2f} {r['unit_si']} ({r['provider']}) - {ref}")
+        val = f"{r['value_si']:.2f}" if r["value_si"] is not None else r.get("value_raw", "N/A")
+        unit = r["unit_si"] or ""
+        lines.append(f"  {r['report_date']} | {r['biomarker_key']}: {val} {unit} ({r['provider']}) - {ref}")
 
     return "\n".join(lines)
 

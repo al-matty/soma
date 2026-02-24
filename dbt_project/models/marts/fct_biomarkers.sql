@@ -13,6 +13,7 @@ joined as (
         s.provider,
         s.source_file,
         s.biomarker_name as biomarker_key,
+        s.value_raw,
 
         -- Original values
         s.value_numeric as value_original,
