@@ -173,7 +173,7 @@ def run(
         typer.echo("No --pdf provided, skipping extraction")
 
     # Load
-    load()
+    load(db_path=str(DB_PATH), raw_dir=str(RAW_DIR))
 
     # Transform
     transform()
