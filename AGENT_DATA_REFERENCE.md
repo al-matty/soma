@@ -105,6 +105,19 @@ print(data["document_summary"])
 
 **Note:** Document summaries are not yet surfaced in the marts layer. You must read the raw JSON directly.
 
+### 6. Environment isolation (`--env`)
+
+All CLI commands accept a global `--env <name>` flag that redirects data to `data/envs/<name>/` (isolated DB, raw JSON, and findings). Use this to test new extraction methods or models without affecting production data.
+
+```bash
+python cli.py --env cli-test extract --pdf reports/bloodwork_2025.pdf
+python cli.py --env cli-test load
+python cli.py --env cli-test transform
+python cli.py compare cli-test
+```
+
+The `compare` command uses DuckDB ATTACH to diff `fct_biomarkers` between production and the named environment, showing changed values, missing biomarkers, and environment-only biomarkers.
+
 ---
 
 ## Common Queries

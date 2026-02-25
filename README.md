@@ -60,6 +60,7 @@ python cli.py run --pdf /path/to/report.pdf
 |---------|-------------|
 | `status` | Show pipeline summary |
 | `query` | Run a SQL query against DuckDB |
+| `compare` | Compare biomarkers between a named environment and production |
 | `reload` | Delete and re-load data for a source file |
 | `reset` | Delete the database and start fresh |
 
