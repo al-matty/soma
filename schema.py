@@ -17,10 +17,10 @@ class BiomarkerRow(BaseModel):
     loinc_code: str | None = None
     notes: str | None = None
 
-    @field_validator("unit", mode="before")
+    @field_validator("value", "unit", mode="before")
     @classmethod
-    def coerce_null_unit(cls, v: str | None) -> str:
-        return v or ""
+    def coerce_null_to_empty(cls, v: str | None) -> str:
+        return v if v is not None else ""
 
 
 class DocumentMetadata(BaseModel):
