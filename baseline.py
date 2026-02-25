@@ -68,6 +68,10 @@ def propose_updates() -> str | None:
     prompt_template = (PROMPTS_DIR / "baseline_prompt.txt").read_text()
     prompt = prompt_template.format(current_baseline=current_baseline, findings=findings)
 
+    from redact import redact_pii, restore_pii
+
+    prompt, pii_mapping = redact_pii(prompt)
+
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
     full_text = ""
@@ -101,10 +105,10 @@ def propose_updates() -> str | None:
         # Strip closing fence
         if "```" in yaml_part:
             yaml_part = yaml_part.split("```", 1)[0]
-        return yaml_part.strip()
+        return restore_pii(yaml_part.strip(), pii_mapping)
 
     # Fallback: no fence found, treat entire response as YAML
-    return full_text.strip()
+    return restore_pii(full_text.strip(), pii_mapping)
 
 
 def show_diff(current: str, proposed: str) -> str:

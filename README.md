@@ -16,9 +16,11 @@ Combined with a lifestyle and supplement profile, the generated knowledge base g
 
 Soma does not send any data anywhere by default. All health data - biomarkers, genetic variants, profile files, generated reports - stays on your machine in a local DuckDB database and gitignored files. Nothing is committed to version control.
 
-Cloud LLM usage (Anthropic API) is opt-in and only triggered when you explicitly run extraction commands. When using the API, you can redact personal information (name, address, DOB, insurance IDs) from PDFs before they are sent - copy `profile/templates/redact.template.yml` to `profile/redact.yml` and list the strings to black out. The original file is never modified. For sensitive documents like genetic reports, you can use `--method manual` to extract data without the PDF ever leaving your machine.
+Cloud LLM usage (Anthropic API) is opt-in and only triggered when you explicitly run extraction or baseline commands. When using the API, you can redact personal information (name, address, DOB, insurance IDs) before data is sent - copy `profile/templates/redact.template.yml` to `profile/redact.yml` and list the strings to redact. For PDFs, matches are blacked out in the copy sent to the API (the original file is never modified). For text-based API calls (like `update-baseline`), matches are replaced with `[REDACTED_N]` placeholders before sending and restored in the response so your local files keep the real values. For sensitive documents like genetic reports, you can use `--method manual` to extract data without the PDF ever leaving your machine.
 
-Genetic data is permanent and reveals information about your relatives. Biomarker panels can be re-identifying. Consider these risks before sending health data to any cloud provider. See [PRIVACY_DISCLAIMER.md](PRIVACY_DISCLAIMER.md) for a detailed discussion.
+For image-based PDFs (scanned or photographed documents), the software redaction in `redact.yml` may not catch all text reliably. The safest approach is to physically cover personal information - for example with small strips of paper - before scanning or photographing the document.
+
+But keep in mind, genetic data in general is permanent and reveals information about your relatives. And biomarker panels can be re-identifying, redaction or not. Consider these risks before sending health data to any cloud provider. See [PRIVACY_DISCLAIMER.md](PRIVACY_DISCLAIMER.md) for a detailed discussion.
 
 ## Quick Start
 
@@ -124,7 +126,7 @@ Copy templates from `profile/templates/` to `profile/` and fill in your data:
 - `supplements.yml` - Current and past supplements
 - `medications.yml` - Current and past medications
 - `experiments.yml` - Time-bounded health protocols
-- `redact.yml` - PII strings to black out from PDFs before API calls
+- `redact.yml` - PII strings to redact before API calls (PDFs and text)
 
 ## Data Access
 

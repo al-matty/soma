@@ -12,7 +12,6 @@ from config import (
     ANTHROPIC_API_KEY,
     EXTRACTION_MODEL,
     FINDINGS_DIR,
-    PROFILE_DIR,
     PROMPTS_DIR,
     RAW_DIR,
 )
@@ -28,13 +27,9 @@ def _redact_pdf(pdf_path: Path) -> tuple[bytes, bool]:
     Returns (pdf_bytes, was_redacted). If profile/redact.yml doesn't exist
     or has no entries, returns original bytes with was_redacted=False.
     """
-    redact_path = PROFILE_DIR / "redact.yml"
-    if not redact_path.exists():
-        return pdf_path.read_bytes(), False
+    from redact import load_redact_strings
 
-    import yaml
-
-    strings = yaml.safe_load(redact_path.read_text()).get("redact", [])
+    strings = load_redact_strings()
     if not strings:
         return pdf_path.read_bytes(), False
 
