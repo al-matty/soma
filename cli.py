@@ -31,7 +31,11 @@ def load(
     db_path: str = typer.Option(str(DB_PATH), help="Path to DuckDB database"),
     raw_dir: str = typer.Option(str(RAW_DIR), help="Path to raw JSON directory"),
 ) -> None:
-    """Load extracted JSON files into DuckDB."""
+    """Load extracted JSON files into DuckDB.
+
+    Idempotent by source file: JSON files whose source PDF has already been loaded are
+    skipped automatically. It is safe to leave all files in data/raw/ permanently.
+    """
     from pathlib import Path
 
     from load import load_all
@@ -256,7 +260,11 @@ def run(
     method: str = typer.Option("api", help="Extraction method: 'api' or 'manual'"),
     save_redacted: bool = typer.Option(False, "--save-redacted", help="Save redacted PDF to data/raw/ for visual verification"),
 ) -> None:
-    """Run the full pipeline: extract -> load -> transform -> render."""
+    """Run the full pipeline: extract -> load -> transform -> render.
+
+    Without --pdf, skips extraction and runs load -> transform -> render on existing
+    JSON files in data/raw/. Useful for reprocessing after editing JSON or dbt models.
+    """
     # Extract (if PDF provided)
     if pdf:
         extract(pdf=pdf, method=method, save_redacted=save_redacted)

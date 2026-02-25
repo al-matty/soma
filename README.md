@@ -78,6 +78,8 @@ You set up your API key once, then run a single command:
 python cli.py run --pdf /path/to/your_bloodwork.pdf
 ```
 
+Without `--pdf`, `run` skips extraction and runs load -> transform -> render on existing JSON files in `data/raw/`. Useful for reprocessing after editing JSON or dbt models.
+
 `run` chains four steps automatically:
 
 **Step 1: Extract** - Reads your PDF, base64-encodes it, sends it to Claude Sonnet with the extraction prompt. Claude returns structured JSON (biomarker names, values, units, reference ranges, LOINC codes) and a markdown summary. Two files are written:
@@ -87,7 +89,7 @@ python cli.py run --pdf /path/to/your_bloodwork.pdf
 **Step 2: Load** - Reads the JSON, validates it against the Pydantic schema, and inserts rows into DuckDB (`data/soma.duckdb`):
 - `raw.lab_results` - one row per biomarker (value, unit, reference range, as-is from the report)
 - `raw.documents` - one row for the report itself (date, provider, type, biomarker count)
-- Idempotent - if you run it again, it skips already-loaded files
+- Idempotent by source file - if you run it again, it skips files whose source PDF has already been loaded. It is safe to leave all JSON files in `data/raw/` permanently
 
 **Step 3: Transform** - dbt seed loads the 40-biomarker reference table with SI conversion factors. dbt run builds the analytical views:
 - `stg_lab_results` - cleans values, parses detection limits (`<0.1` -> `0.05` + flag), deduplicates
