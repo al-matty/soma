@@ -81,6 +81,7 @@ All in `profile/`. Read these to understand who the user is and what they're doi
 | `docs/profile/current_snapshot.md` | Latest value per biomarker, grouped by category, with trend arrows and range flags |
 | `docs/profile/timeline.md` | Chronological list of all reports |
 | `docs/profile/medical_history.md` | Conditions, genetic variants, chronic patterns from baseline |
+| `docs/profile/report_index.md` | Index of all reports with metadata and relative links to findings docs |
 | `docs/findings/YYYY/*.md` | Per-report narrative summaries from extraction |
 
 ### 4. Raw JSON - extraction output

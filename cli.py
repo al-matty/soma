@@ -4,7 +4,7 @@ Commands:
     extract     Extract biomarkers from a PDF lab report (API or manual).
     load        Ingest extracted JSON files from data/raw/ into DuckDB.
     transform   Run dbt pipeline: seed, run, and snapshot.
-    render      Generate profile markdown (snapshot, timeline, history) from dbt marts.
+    render      Generate profile markdown (snapshot, timeline, history, report index) from dbt marts.
     update-baseline  Propose derived baseline updates via Claude.
     status      Show pipeline summary (report count, biomarker count, profile files).
     query       Run an arbitrary SQL query against the DuckDB database.

@@ -1,5 +1,6 @@
 """Profile markdown renderer - generates docs from dbt marts."""
 
+import os
 from datetime import date
 from pathlib import Path
 
@@ -212,6 +213,55 @@ def render_medical_history(con: duckdb.DuckDBPyConnection) -> str:
     return "\n".join(lines)
 
 
+def render_report_index(con: duckdb.DuckDBPyConnection) -> str:
+    """Generate report_index.md - links profile docs to per-report findings."""
+    rows = _query(con, """
+        select
+            d.report_date,
+            d.provider,
+            d.report_type,
+            d.biomarker_count,
+            d.tags,
+            d.markdown_path,
+            count(case when f.is_within_ref_range = false then 1 end) as out_of_range_count
+        from main.dim_documents d
+        left join main.fct_biomarkers f
+            on d.source_file = f.source_file
+        group by d.report_date, d.provider, d.report_type,
+                 d.biomarker_count, d.tags, d.markdown_path
+        order by d.report_date desc
+    """)
+
+    lines = [
+        "# Report Index",
+        f"*Generated: {date.today()}*",
+        "",
+        f"Total reports: {len(rows)}",
+        "",
+        "| Date | Type | Provider | Biomarkers | Out of Range | Tags | Findings |",
+        "|------|------|----------|------------|--------------|------|----------|",
+    ]
+
+    for r in rows:
+        tags = r["tags"] or ""
+        oor = r["out_of_range_count"]
+
+        # Build relative link from docs/profile/ to the findings doc
+        link = ""
+        if r["markdown_path"]:
+            rel = os.path.relpath(r["markdown_path"], "docs/profile")
+            filename = Path(r["markdown_path"]).stem
+            link = f"[{filename}]({rel})"
+
+        lines.append(
+            f"| {r['report_date']} | {r['report_type']} | {r['provider']} "
+            f"| {r['biomarker_count']} | {oor} | {tags} | {link} |"
+        )
+
+    lines.append("")
+    return "\n".join(lines)
+
+
 def render_all(db_path: Path = DB_PATH) -> list[str]:
     """Generate all profile markdown files. Returns list of paths written."""
     con = duckdb.connect(str(db_path))
@@ -224,6 +274,7 @@ def render_all(db_path: Path = DB_PATH) -> list[str]:
             ("current_snapshot.md", render_current_snapshot),
             ("timeline.md", render_timeline),
             ("medical_history.md", render_medical_history),
+            ("report_index.md", render_report_index),
         ]:
             content = renderer(con)
             path = PROFILE_DOCS_DIR / filename
