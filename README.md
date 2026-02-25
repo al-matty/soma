@@ -1,6 +1,16 @@
 # Soma - Your Biological Digital Twin
 
-A local-first personal health data pipeline that turns scattered lab report PDFs into a structured, queryable health record. A "biological digital twin" you fully own and control.
+A local-first personal health data pipeline that turns scattered lab report PDFs into a structured, queryable health record. A "biological digital twin" you fully own and control. You'll have
+* a well-structured local DuckDB database of all your recorded (and scanned) biomarkers
+  - enables detailed tracking over time, longevity experiments, early alerts, etc.
+* a docs folder with md files containing the medical narratives, doctors' statements, ...
+  - provides the context around these biomarker rows (also one-off reports, findings, etc.)
+* up to date artifacts (also md), like a data-driven history & a current snapshot of your biological state
+  - are updated with `update-baseline` based on what's new in the db
+
+Context is everything. Routinely dump your lab report PDFs into the data folder, and soma will set up a highly personalized knowledge base as ideal long-term infrastructure for health-related questions. Agent-friendly via CLI and docs ([AGENT_DATA_REFERENCE.md](AGENT_DATA_REFERENCE.md)), soma also opens up the possibility to run your own local agent specialized in giving you tailor-made medical advice, literally querying your biological facts while reasoning.
+
+---
 
 ![Soma pipeline diagram](soma-diagram.png)
 
@@ -10,17 +20,17 @@ Most people accumulate lab reports from different providers over years, in diffe
 
 Soma fixes this by extracting biomarker data from your PDFs, standardizing everything to SI units, tracking changes over time, and generating clean markdown summaries. You can see at a glance which values are out of range, how they've trended, and whether a supplement or lifestyle change correlates with improvement.
 
-Combined with a lifestyle and supplement profile, the generated knowledge base gives an LLM agent ("Dr. Claude") the full context it needs to reason about your health - flag patterns a single lab report wouldn't reveal, prepare pre-visit summaries for your doctor, or help you design and evaluate personal health experiments.
+Combined with a lifestyle and supplement profile, the generated knowledge base can provide an LLM agent the full context it needs to reason about your health - flag patterns a single lab report wouldn't reveal, prepare pre-visit summaries for your doctor, or help you design and evaluate personal health experiments.
 
 ## Privacy
 
 Soma does not send any data anywhere by default. All health data - biomarkers, genetic variants, profile files, generated reports - stays on your machine in a local DuckDB database and gitignored files. Nothing is committed to version control.
 
-Cloud LLM usage (Anthropic API) is opt-in and only triggered when you explicitly run extraction or baseline commands. When using the API, you can redact personal information (name, address, DOB, insurance IDs) before data is sent - copy `profile/templates/redact.template.yml` to `profile/redact.yml` and list the strings to redact. For PDFs, matches are blacked out in the copy sent to the API (the original file is never modified). For text-based API calls (like `update-baseline`), matches are replaced with `[REDACTED_N]` placeholders before sending and restored in the response so your local files keep the real values. For sensitive documents like genetic reports, you can use `--method manual` to extract data without the PDF ever leaving your machine.
+Cloud LLM usage (Anthropic API) is opt-in and only triggered when you explicitly run the `extract` (part of `run`) or `update-baseline` command. When using the API, you can redact personal information (name, address, DOB, insurance IDs) before data is sent - copy `profile/templates/redact.template.yml` to `profile/redact.yml` and list the strings to redact. For PDFs, matches are blacked out in the copy sent to the API (the original file is never modified). For text-based API calls (like `update-baseline`), matches are replaced with `[REDACTED_N]` placeholders before sending and restored in the response so your local files keep the real values. For sensitive documents like genetic reports, you can use `--method manual` to extract data without the PDF ever leaving your machine.
 
 For image-based PDFs (scanned or photographed documents), the software redaction in `redact.yml` may not catch all text reliably. The safest approach is to physically cover personal information - for example with small strips of paper - before scanning or photographing the document.
 
-But keep in mind, genetic data in general is permanent and reveals information about your relatives. And biomarker panels can be re-identifying, redaction or not. Consider these risks before sending health data to any cloud provider. See [PRIVACY_DISCLAIMER.md](PRIVACY_DISCLAIMER.md) for a detailed discussion.
+But keep in mind, genetic data in general is permanent and reveals information about your relatives. And biomarker panels can be re-identifying, redaction or not. Consider these risks before sending health data to any cloud provider, or use a local LLM. See [PRIVACY_DISCLAIMER.md](PRIVACY_DISCLAIMER.md) for a detailed discussion.
 
 ## Quick Start
 
@@ -54,7 +64,7 @@ python cli.py run --pdf /path/to/report.pdf
 | 4 | `render` | Generate profile markdown from dbt marts |
 | (5) | `update-baseline` | Propose derived baseline updates via Claude |
 
-### Maintain database
+### Query & maintain database
 
 | Command | Description |
 |---------|-------------|
