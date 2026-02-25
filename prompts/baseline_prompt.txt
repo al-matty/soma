@@ -1,0 +1,25 @@
+Given these new lab results and the current baseline, determine whether any new permanent
+facts should be added to the derived section of the baseline YAML.
+
+Only add findings that are permanently relevant to future medical decisions, such as:
+- Genetic variants and their clinical implications
+- Chronic patterns confirmed across multiple reports
+- New diagnoses or conditions
+
+Do NOT add:
+- Acute, one-time lab abnormalities
+- Values that are already captured in the current baseline
+- Commentary, reasoning, or explanations
+
+Current baseline:
+```yaml
+{current_baseline}
+```
+
+{findings}
+
+First, briefly explain your reasoning: which findings are permanently relevant, which are
+acute or already captured, and what (if anything) you are changing. Keep this concise.
+
+Then return the complete baseline YAML inside a ```yaml code fence. If no changes are
+needed, return the current baseline YAML unchanged inside the fence.

@@ -138,7 +138,7 @@ def update_baseline() -> None:
     baseline_path = PROFILE_DIR / "baseline.yml"
     current = baseline_path.read_text() if baseline_path.exists() else ""
 
-    typer.echo("Analyzing latest findings...")
+    typer.echo("Analyzing latest findings...\n")
     proposed = propose_updates()
 
     if proposed is None:
