@@ -144,3 +144,5 @@ import duckdb
 con = duckdb.connect("data/soma.duckdb", read_only=True)
 df = con.sql("SELECT * FROM fct_biomarkers").df()
 ```
+
+For a complete reference of all tables, profile files, SQL patterns, and how to use the data programmatically, see [AGENT_DATA_REFERENCE.md](AGENT_DATA_REFERENCE.md).
