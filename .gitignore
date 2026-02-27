@@ -221,14 +221,12 @@ __marimo__/
 CLAUDE.md
 
 # Personal health data
-data/raw/*.json
+data/*
+!data/raw/.gitkeep
 data/soma.duckdb
 data/soma.duckdb.wal
-profile/baseline.yml
-profile/lifestyle.yml
-profile/supplements.yml
-profile/medications.yml
-profile/experiments.yml
+profile/*
+!profile/templates/
 docs/findings/*
 !docs/findings/.gitkeep
 docs/profile/*

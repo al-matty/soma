@@ -1,11 +1,12 @@
 """Baseline updater - proposes derived baseline updates via Claude."""
 
 import difflib
+import sys
 
 import duckdb
 import yaml
 
-from config import ANTHROPIC_API_KEY, DB_PATH, EXTRACTION_MODEL, PROFILE_DIR
+from config import ANTHROPIC_API_KEY, DB_PATH, EXTRACTION_MODEL, PROFILE_DIR, PROMPTS_DIR
 
 
 def _query(con: duckdb.DuckDBPyConnection, sql: str) -> list[dict]:
@@ -22,6 +23,7 @@ def get_latest_findings(db_path=DB_PATH) -> str:
     rows = _query(con, """
         select
             biomarker_key,
+            value_raw,
             value_si,
             unit_si,
             report_date,
@@ -41,7 +43,9 @@ def get_latest_findings(db_path=DB_PATH) -> str:
     lines = ["Recent biomarker results:"]
     for r in rows:
         ref = "in range" if r["is_within_ref_range"] else "OUT OF RANGE" if r["is_within_ref_range"] is not None else "unknown"
-        lines.append(f"  {r['report_date']} | {r['biomarker_key']}: {r['value_si']:.2f} {r['unit_si']} ({r['provider']}) - {ref}")
+        val = f"{r['value_si']:.2f}" if r["value_si"] is not None else r.get("value_raw", "N/A")
+        unit = r["unit_si"] or ""
+        lines.append(f"  {r['report_date']} | {r['biomarker_key']}: {val} {unit} ({r['provider']}) - {ref}")
 
     return "\n".join(lines)
 
@@ -61,27 +65,50 @@ def propose_updates() -> str | None:
 
     findings = get_latest_findings()
 
+    prompt_template = (PROMPTS_DIR / "baseline_prompt.txt").read_text()
+    prompt = prompt_template.format(current_baseline=current_baseline, findings=findings)
+
+    from redact import redact_pii, restore_pii
+
+    prompt, pii_mapping = redact_pii(prompt)
+
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-    response = client.messages.create(
+
+    full_text = ""
+    fence_marker = "```yaml"
+    in_yaml = False
+
+    with client.messages.stream(
         model=EXTRACTION_MODEL,
         max_tokens=4096,
-        messages=[
-            {
-                "role": "user",
-                "content": (
-                    "Given these new lab results and the current baseline, should any "
-                    "new permanent facts be added to the derived section? Only add things "
-                    "that are permanently relevant to future medical decisions.\n\n"
-                    f"Current baseline:\n```yaml\n{current_baseline}\n```\n\n"
-                    f"{findings}\n\n"
-                    "Return ONLY the updated YAML for the full baseline file. "
-                    "If no changes are needed, return the current baseline unchanged."
-                ),
-            }
-        ],
-    )
+        messages=[{"role": "user", "content": prompt}],
+    ) as stream:
+        for chunk in stream.text_stream:
+            full_text += chunk
+            if not in_yaml:
+                if fence_marker in full_text:
+                    # Print any reasoning text before the fence
+                    before_fence = full_text.split(fence_marker, 1)[0]
+                    # We may have already printed some; just flush the remainder
+                    in_yaml = True
+                else:
+                    sys.stdout.write(chunk)
+                    sys.stdout.flush()
 
-    return response.content[0].text
+    # Visual separation between reasoning and diff
+    sys.stdout.write("\n")
+    sys.stdout.flush()
+
+    # Extract YAML from fenced block
+    if fence_marker in full_text:
+        yaml_part = full_text.split(fence_marker, 1)[1]
+        # Strip closing fence
+        if "```" in yaml_part:
+            yaml_part = yaml_part.split("```", 1)[0]
+        return restore_pii(yaml_part.strip(), pii_mapping)
+
+    # Fallback: no fence found, treat entire response as YAML
+    return restore_pii(full_text.strip(), pii_mapping)
 
 
 def show_diff(current: str, proposed: str) -> str:

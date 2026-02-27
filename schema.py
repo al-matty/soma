@@ -1,7 +1,7 @@
 """Pydantic schemas for extraction output and loading."""
 
 from datetime import date, datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class BiomarkerRow(BaseModel):
@@ -11,11 +11,16 @@ class BiomarkerRow(BaseModel):
     provider: str
     biomarker_name: str
     value: str = Field(description="Raw value as-is, including < or > prefixes")
-    unit: str
+    unit: str = ""
     reference_range_low: str | None = None
     reference_range_high: str | None = None
     loinc_code: str | None = None
     notes: str | None = None
+
+    @field_validator("value", "unit", mode="before")
+    @classmethod
+    def coerce_null_to_empty(cls, v: str | None) -> str:
+        return v if v is not None else ""
 
 
 class DocumentMetadata(BaseModel):

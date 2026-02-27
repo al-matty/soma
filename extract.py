@@ -21,8 +21,41 @@ def _read_prompt() -> str:
     return (PROMPTS_DIR / "extraction_prompt.txt").read_text()
 
 
-def _write_outputs(result: ExtractionResult) -> dict[str, str]:
+def _redact_pdf(pdf_path: Path) -> tuple[bytes, bool]:
+    """Redact PII strings from PDF before sending to API.
+
+    Returns (pdf_bytes, was_redacted). If profile/redact.yml doesn't exist
+    or has no entries, returns original bytes with was_redacted=False.
+    """
+    from redact import load_redact_strings
+
+    strings = load_redact_strings()
+    if not strings:
+        return pdf_path.read_bytes(), False
+
+    import pymupdf
+
+    doc = pymupdf.open(pdf_path)
+    for page in doc:
+        for s in strings:
+            for area in page.search_for(s):
+                page.add_redact_annot(area, fill=(0, 0, 0))
+        page.apply_redactions()
+
+    redacted_bytes = doc.tobytes()
+    doc.close()
+    return redacted_bytes, True
+
+
+def _write_outputs(
+    result: ExtractionResult,
+    raw_dir: Path | None = None,
+    findings_dir: Path | None = None,
+) -> dict[str, str]:
     """Write JSON and markdown outputs. Returns paths written."""
+    raw_dir = raw_dir or RAW_DIR
+    findings_dir = findings_dir or FINDINGS_DIR
+
     # Determine filenames from extraction data
     report_date = result.biomarkers[0].report_date if result.biomarkers else "unknown"
     provider = result.biomarkers[0].provider if result.biomarkers else "unknown"
@@ -30,14 +63,14 @@ def _write_outputs(result: ExtractionResult) -> dict[str, str]:
     timestamp = datetime.now().strftime("%H%M%S")
 
     # Write JSON to data/raw/
-    RAW_DIR.mkdir(parents=True, exist_ok=True)
+    raw_dir.mkdir(parents=True, exist_ok=True)
     json_filename = f"{report_date}_{provider_slug}_{timestamp}.json"
-    json_path = RAW_DIR / json_filename
+    json_path = raw_dir / json_filename
     json_path.write_text(result.model_dump_json(indent=2))
 
     # Write markdown to docs/findings/YYYY/
     year = str(report_date)[:4] if str(report_date) != "unknown" else "unknown"
-    findings_year_dir = FINDINGS_DIR / year
+    findings_year_dir = findings_dir / year
     findings_year_dir.mkdir(parents=True, exist_ok=True)
     report_type = result.metadata.report_type
     md_filename = f"{report_date}_{report_type}_{provider_slug}.md"
@@ -47,9 +80,16 @@ def _write_outputs(result: ExtractionResult) -> dict[str, str]:
     return {"json_path": str(json_path), "markdown_path": str(md_path)}
 
 
-def extract_api(pdf_path: Path) -> tuple[ExtractionResult, dict[str, str]]:
+def extract_api(
+    pdf_path: Path,
+    save_redacted: bool = False,
+    raw_dir: Path | None = None,
+    findings_dir: Path | None = None,
+) -> tuple[ExtractionResult, dict[str, str]]:
     """Extract biomarkers from a PDF via Claude API."""
     import anthropic
+
+    raw_dir = raw_dir or RAW_DIR
 
     if not ANTHROPIC_API_KEY:
         raise ValueError(
@@ -59,8 +99,13 @@ def extract_api(pdf_path: Path) -> tuple[ExtractionResult, dict[str, str]]:
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
     prompt = _read_prompt()
 
-    # Read and encode PDF
-    pdf_bytes = pdf_path.read_bytes()
+    # Read and encode PDF (with PII redaction if configured)
+    pdf_bytes, was_redacted = _redact_pdf(pdf_path)
+
+    if save_redacted and was_redacted:
+        raw_dir.mkdir(parents=True, exist_ok=True)
+        redacted_path = raw_dir / f"{pdf_path.stem}_redacted.pdf"
+        redacted_path.write_bytes(pdf_bytes)
     pdf_b64 = base64.b64encode(pdf_bytes).decode("utf-8")
 
     response = client.messages.create(
@@ -99,11 +144,16 @@ def extract_api(pdf_path: Path) -> tuple[ExtractionResult, dict[str, str]]:
         extraction_method="api",
     )
 
-    paths = _write_outputs(result)
+    paths = _write_outputs(result, raw_dir=raw_dir, findings_dir=findings_dir)
     return result, paths
 
 
-def extract_manual(json_text: str, source_file: str) -> tuple[ExtractionResult, dict[str, str]]:
+def extract_manual(
+    json_text: str,
+    source_file: str,
+    raw_dir: Path | None = None,
+    findings_dir: Path | None = None,
+) -> tuple[ExtractionResult, dict[str, str]]:
     """Parse manually provided JSON from a Claude chat extraction."""
     data = json.loads(json_text)
 
@@ -113,5 +163,5 @@ def extract_manual(json_text: str, source_file: str) -> tuple[ExtractionResult, 
         extraction_method="manual",
     )
 
-    paths = _write_outputs(result)
+    paths = _write_outputs(result, raw_dir=raw_dir, findings_dir=findings_dir)
     return result, paths

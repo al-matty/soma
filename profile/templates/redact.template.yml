@@ -1,0 +1,13 @@
+# Strings to redact before sending data to the Anthropic API.
+# Copy this file to profile/redact.yml and add your personal information.
+#
+# For PDFs: matches are covered with black rectangles (original PDF not modified).
+# For text (baseline updates, etc.): matches are replaced with [REDACTED_N]
+# placeholders before sending, then restored in the response.
+#
+# Longer strings are matched first to avoid partial replacements.
+redact:
+  - "Max Mustermann"
+  - "Musterstraße 1, 12345 Berlin"
+  - "01.01.1990"
+  - "Versichertennr: 123456789"

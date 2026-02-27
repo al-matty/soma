@@ -18,10 +18,14 @@ models:
                 field: biomarker_key
               config:
                 severity: warn
+      - name: value_raw
+        description: Original value string as extracted from the report
       - name: value_si
         description: Value converted to SI units
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: warn
       - name: is_within_ref_range
         description: Whether value falls within provider reference range
       - name: is_within_optimal_range

@@ -48,7 +48,7 @@ def ensure_raw_tables(con: duckdb.DuckDBPyConnection) -> None:
 
 def load_extraction(con: duckdb.DuckDBPyConnection, result: ExtractionResult) -> int:
     """Load a single ExtractionResult into DuckDB. Returns number of rows inserted."""
-    # Check if already loaded (idempotent by source_file)
+    # Check if already loaded (loading is idempotent by source_file -> known files will be skipped)
     existing = con.execute(
         "SELECT COUNT(*) FROM raw.documents WHERE source_file = ?",
         [result.source_file],
@@ -107,6 +107,17 @@ def load_extraction(con: duckdb.DuckDBPyConnection, result: ExtractionResult) ->
         )
 
     return len(result.biomarkers)
+
+
+def delete_source(con: duckdb.DuckDBPyConnection, source_file: str) -> int:
+    """Delete all raw data for a given source_file. Returns rows deleted."""
+    rows = con.execute(
+        "SELECT COUNT(*) FROM raw.lab_results WHERE source_file = ?",
+        [source_file],
+    ).fetchone()[0]
+    con.execute("DELETE FROM raw.lab_results WHERE source_file = ?", [source_file])
+    con.execute("DELETE FROM raw.documents WHERE source_file = ?", [source_file])
+    return rows
 
 
 def load_all(db_path: Path = DB_PATH, raw_dir: Path = RAW_DIR) -> dict:
