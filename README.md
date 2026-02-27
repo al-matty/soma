@@ -110,10 +110,11 @@ Without `--pdf`, `run` skips extraction and runs load -> transform -> render on 
 - `dim_documents` - document catalog
 - dbt snapshot captures reference ranges for SCD2 tracking
 
-**Step 4: Render** - Queries the dbt marts and generates three markdown files in `docs/profile/`:
+**Step 4: Render** - Queries the dbt marts and generates four markdown files in `docs/profile/`:
 - `current_snapshot.md` - latest value per biomarker, grouped by category, with trend arrows and range flags
 - `timeline.md` - chronological list of all reports
 - `medical_history.md` - conditions and findings from `profile/baseline.yml` (if it exists)
+- `report_index.md` - index of all reports with metadata and links to findings docs
 
 ### What gets created
 
@@ -125,6 +126,7 @@ Without `--pdf`, `run` skips extraction and runs load -> transform -> render on 
 | `docs/profile/current_snapshot.md` | Regenerated | Yes |
 | `docs/profile/timeline.md` | Regenerated | Yes |
 | `docs/profile/medical_history.md` | Regenerated | Yes |
+| `docs/profile/report_index.md` | Regenerated | Yes |
 
 Profile YAMLs (`profile/*.yml`) are not touched by the pipeline. Those are only written by you (manually copying templates and filling in data) or by `soma update-baseline` (which calls Claude to propose derived findings, then asks you to approve the diff).
 

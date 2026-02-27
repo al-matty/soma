@@ -172,10 +172,37 @@ def render_medical_history(con: duckdb.DuckDBPyConnection) -> str:
 
         if derived.get("conditions"):
             lines.extend(["## Conditions", ""])
+            # Group by status in clinical priority order
+            status_order = ["active", "monitoring", "confirmed", "resolved"]
+            status_labels = {
+                "active": "Active",
+                "monitoring": "Monitoring",
+                "confirmed": "Confirmed",
+                "resolved": "Resolved",
+            }
+            grouped: dict[str, list[dict]] = {}
             for c in derived["conditions"]:
-                status = c.get("status", "unknown")
-                lines.append(f"- **{c['name']}** ({status}) - discovered {c.get('discovered_date', 'unknown')}")
-            lines.append("")
+                s = c.get("status", "unknown")
+                grouped.setdefault(s, []).append(c)
+
+            all_keys = status_order + [k for k in grouped if k not in status_order]
+            for status_key in all_keys:
+                if status_key not in grouped:
+                    continue
+                label = status_labels.get(status_key, status_key.title())
+                lines.extend([f"### {label}", ""])
+                for c in grouped[status_key]:
+                    lines.append(f"- **{c['name']}**")
+                    meta_parts = []
+                    if c.get("source_report"):
+                        meta_parts.append(f"Source: {c['source_report']}")
+                    if c.get("discovered_date"):
+                        meta_parts.append(f"Discovered: {c['discovered_date']}")
+                    if meta_parts:
+                        lines.append(f"  - {' | '.join(meta_parts)}")
+                    if c.get("details"):
+                        lines.append(f"  - {c['details'].strip()}")
+                lines.append("")
 
         if derived.get("genetic_variants"):
             lines.extend(["## Genetic Variants", ""])
@@ -183,6 +210,13 @@ def render_medical_history(con: duckdb.DuckDBPyConnection) -> str:
                 lines.append(f"- **{g['finding']}**")
                 lines.append(f"  - Implication: {g.get('implication', '-')}")
                 lines.append(f"  - Relevance: {g.get('relevance', '-')}")
+                meta_parts = []
+                if g.get("source_report"):
+                    meta_parts.append(f"Source: {g['source_report']}")
+                if g.get("discovered_date"):
+                    meta_parts.append(f"Discovered: {g['discovered_date']}")
+                if meta_parts:
+                    lines.append(f"  - {' | '.join(meta_parts)}")
             lines.append("")
 
         if derived.get("chronic_patterns"):
