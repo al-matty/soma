@@ -21,6 +21,8 @@ Extract all data from this lab report. Return a JSON object with two keys:
 
 3. "metadata": {
    "report_type": "<blood_panel|genetics|radiology|specialist|prescription|other>",
+   "report_date": "YYYY-MM-DD",
+   "provider": "<lab or clinic name>",
    "tags": ["<relevant tags>"],
    "baseline_candidates": ["<any findings that are permanent medical facts, e.g. genetic variants, chronic conditions>"]
 }

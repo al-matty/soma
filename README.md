@@ -5,8 +5,8 @@ A local-first personal health data pipeline that turns scattered lab report PDFs
   - enables detailed tracking over time, longevity experiments, early alerts, etc.
 * a docs folder with md files containing the medical narratives, doctors' statements, ...
   - provides the context around these biomarker rows (also one-off reports, findings, etc.)
-* up to date artifacts (also md), like a data-driven history & a current snapshot of your biological state
-  - are updated with `update-baseline` based on what's new in the db
+* up to date artifacts (also md files), like a current snapshot of your biological state & medical history
+  - they are updated with `update-baseline` based on what's new in the db
 
 Context is everything. Routinely dump your lab report PDFs into the data folder, and soma will set up a highly personalized knowledge base as ideal long-term infrastructure for health-related questions. Agent-friendly via CLI and docs ([AGENT_DATA_REFERENCE.md](AGENT_DATA_REFERENCE.md)), soma also opens up the possibility to run your own local agent specialized in giving you tailor-made medical advice, literally querying your biological facts while reasoning.
 

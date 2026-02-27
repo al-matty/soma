@@ -49,7 +49,7 @@ def test_load_idempotent(tmp_db, sample_result):
     ensure_raw_tables(con)
     load_extraction(con, sample_result)
     rows = load_extraction(con, sample_result)
-    assert rows == 0
+    assert rows is None
 
     lab_count = con.execute("SELECT COUNT(*) FROM raw.lab_results").fetchone()[0]
     assert lab_count == 6

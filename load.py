@@ -34,8 +34,8 @@ def ensure_raw_tables(con: duckdb.DuckDBPyConnection) -> None:
         CREATE TABLE IF NOT EXISTS raw.documents (
             id              VARCHAR PRIMARY KEY,
             source_file     VARCHAR NOT NULL UNIQUE,
-            report_date     DATE NOT NULL,
-            provider        VARCHAR NOT NULL,
+            report_date     DATE,
+            provider        VARCHAR,
             report_type     VARCHAR NOT NULL,
             tags            VARCHAR,
             markdown_path   VARCHAR,
@@ -44,21 +44,34 @@ def ensure_raw_tables(con: duckdb.DuckDBPyConnection) -> None:
             extraction_method VARCHAR NOT NULL
         )
     """)
+    # Migrate existing tables that have NOT NULL on report_date/provider
+    for col in ("report_date", "provider"):
+        try:
+            con.execute(f"ALTER TABLE raw.documents ALTER COLUMN {col} DROP NOT NULL")
+        except duckdb.CatalogException:
+            pass
 
 
-def load_extraction(con: duckdb.DuckDBPyConnection, result: ExtractionResult) -> int:
-    """Load a single ExtractionResult into DuckDB. Returns number of rows inserted."""
+def load_extraction(con: duckdb.DuckDBPyConnection, result: ExtractionResult) -> int | None:
+    """Load a single ExtractionResult into DuckDB.
+
+    Returns number of biomarker rows inserted, or None if the file was already loaded.
+    """
     # Check if already loaded (loading is idempotent by source_file -> known files will be skipped)
     existing = con.execute(
         "SELECT COUNT(*) FROM raw.documents WHERE source_file = ?",
         [result.source_file],
     ).fetchone()[0]
     if existing > 0:
-        return 0
+        return None
 
-    # Insert document record
-    report_date = result.biomarkers[0].report_date if result.biomarkers else None
-    provider = result.biomarkers[0].provider if result.biomarkers else "unknown"
+    # Insert document record - resolve from metadata first, biomarkers as fallback
+    report_date = result.metadata.report_date or (
+        result.biomarkers[0].report_date if result.biomarkers else None
+    )
+    provider = result.metadata.provider or (
+        result.biomarkers[0].provider if result.biomarkers else None
+    )
     year = str(report_date.year) if report_date else "unknown"
     md_path = f"docs/findings/{year}/{report_date}_{result.metadata.report_type}_{provider}.md"
 
@@ -137,7 +150,7 @@ def load_all(db_path: Path = DB_PATH, raw_dir: Path = RAW_DIR) -> dict:
             data = json.loads(f.read_text())
             result = ExtractionResult(**data)
             rows = load_extraction(con, result)
-            if rows > 0:
+            if rows is not None:
                 files_loaded += 1
                 total_rows += rows
         except (json.JSONDecodeError, ValueError) as e:

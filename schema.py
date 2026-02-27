@@ -29,6 +29,8 @@ class DocumentMetadata(BaseModel):
     report_type: str = Field(
         description="blood_panel, genetics, radiology, specialist, prescription, or other"
     )
+    report_date: date | None = None
+    provider: str | None = None
     tags: list[str] = Field(default_factory=list)
     baseline_candidates: list[str] = Field(
         default_factory=list,
