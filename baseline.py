@@ -1,6 +1,7 @@
 """Baseline updater - proposes derived baseline updates via Claude."""
 
 import difflib
+import json
 import sys
 
 import duckdb
@@ -35,17 +36,51 @@ def get_latest_findings(db_path=DB_PATH) -> str:
         order by report_date desc, biomarker_key
     """)
 
+    lines = []
+    if rows:
+        lines.append("Recent biomarker results:")
+        for r in rows:
+            ref = "in range" if r["is_within_ref_range"] else "OUT OF RANGE" if r["is_within_ref_range"] is not None else "unknown"
+            val = f"{r['value_si']:.2f}" if r["value_si"] is not None else r.get("value_raw", "N/A")
+            unit = r["unit_si"] or ""
+            lines.append(f"  {r['report_date']} | {r['biomarker_key']}: {val} {unit} ({r['provider']}) - {ref}")
+
+    # Document context: summaries and baseline candidates
+    # Gracefully handle databases where dim_documents hasn't been re-materialized yet
+    try:
+        docs = _query(con, """
+            select
+                report_date, provider, report_type, source_file,
+                document_summary, baseline_candidates
+            from main.dim_documents
+            where document_summary is not null
+               or baseline_candidates is not null
+            order by report_date desc
+        """)
+    except duckdb.BinderException:
+        docs = []
+
     con.close()
 
-    if not rows:
-        return "No biomarker data found."
+    if docs:
+        lines.append("")
+        lines.append("Document summaries and baseline candidates:")
+        for d in docs:
+            lines.append(f"\n--- {d['report_date']} | {d['report_type']} ({d['provider']}) ---")
+            if d.get("document_summary"):
+                lines.append(d["document_summary"])
+            if d.get("baseline_candidates"):
+                try:
+                    candidates = json.loads(d["baseline_candidates"])
+                except (ValueError, TypeError):
+                    candidates = []
+                if candidates:
+                    lines.append("Baseline candidates:")
+                    for c in candidates:
+                        lines.append(f"  - {c}")
 
-    lines = ["Recent biomarker results:"]
-    for r in rows:
-        ref = "in range" if r["is_within_ref_range"] else "OUT OF RANGE" if r["is_within_ref_range"] is not None else "unknown"
-        val = f"{r['value_si']:.2f}" if r["value_si"] is not None else r.get("value_raw", "N/A")
-        unit = r["unit_si"] or ""
-        lines.append(f"  {r['report_date']} | {r['biomarker_key']}: {val} {unit} ({r['provider']}) - {ref}")
+    if not lines:
+        return "No findings data found."
 
     return "\n".join(lines)
 

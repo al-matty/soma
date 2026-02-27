@@ -48,6 +48,8 @@ The primary analytical layer. All values are SI-converted and range-flagged.
 | `report_type` | blood_panel, genetics, radiology, specialist, prescription, other |
 | `tags` | Comma-separated metadata tags |
 | `biomarker_count` | Number of biomarkers in this report |
+| `document_summary` | Markdown clinical narrative (diagnoses, imaging, recommendations) |
+| `baseline_candidates` | JSON array of permanent medical facts flagged during extraction |
 
 **`dim_biomarker_meta`** - reference table (40 biomarkers)
 
@@ -88,22 +90,18 @@ All in `profile/`. Read these to understand who the user is and what they're doi
 
 `data/raw/*.json` files contain the raw extraction results. Rarely needed directly since the marts layer has everything cleaned and converted. Useful if you need to inspect what Claude extracted before any transformation.
 
-### 5. Document Summaries - clinical narrative
+### 5. Document Summaries and Baseline Candidates
 
-Each raw JSON file contains a `document_summary` key with a markdown-formatted clinical narrative. This includes diagnoses, imaging findings, treatment history, medication, and clinical recommendations - context that biomarker rows alone cannot provide.
+`dim_documents` includes two text columns with clinical context beyond structured biomarker data:
+
+- `document_summary` - markdown-formatted clinical narrative with diagnoses, imaging findings, treatment history, medication, and recommendations
+- `baseline_candidates` - JSON array of permanent medical facts flagged during extraction (e.g. genetic variants, chronic conditions)
+
 ```bash
-python3 cli.py query "SELECT source_file, report_date, report_type, tags FROM main.dim_documents ORDER BY report_date"
+python cli.py query "SELECT source_file, report_date, report_type, document_summary, baseline_candidates FROM main.dim_documents ORDER BY report_date"
 ```
 
-Then read the corresponding JSON for narrative context:
-```python
-import json
-from pathlib import Path
-data = json.loads(Path("data/raw/<filename>.json").read_text())
-print(data["document_summary"])
-```
-
-**Note:** Document summaries are not yet surfaced in the marts layer. You must read the raw JSON directly.
+These fields are also used by `update-baseline` to surface non-biomarker findings (therapy letters, genetics reports) for baseline consideration.
 
 ### 6. Environment isolation (`--env`)
 
@@ -189,4 +187,4 @@ ORDER BY category
 - **Deduplication:** The staging layer deduplicates by (report_date, biomarker_name, provider), keeping the latest extraction.
 - **All health data is gitignored.** The `data/`, `profile/*.yml`, `docs/findings/`, and `docs/profile/` directories never leave the local machine unless the user explicitly sends them.
 - **Category coverage:** The `category` column in `fct_biomarkers` only populates for biomarkers matching the 40 keys in `biomarker_meta.csv`. Many extracted biomarkers (oral microbiome species, genetic markers, less common analytes) will have `category = NULL`. Don't rely on category-based filtering for completeness.
-- **Document summaries in raw JSON:** The richest clinical context (diagnoses, imaging, recommendations) lives in `data/raw/*.json` under the `document_summary` key. The documented SQL path covers structured biomarker data; check the summaries when you need clinical narrative.
+- **Document summaries:** Clinical narrative context (diagnoses, imaging, recommendations) is available in `dim_documents.document_summary`. Baseline candidates (permanent medical facts) are in `dim_documents.baseline_candidates` as a JSON array string.

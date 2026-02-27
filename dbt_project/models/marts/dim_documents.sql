@@ -20,7 +20,9 @@ select
     d.markdown_path,
     coalesce(b.actual_biomarker_count, 0) as biomarker_count,
     d.extracted_at,
-    d.extraction_method
+    d.extraction_method,
+    d.document_summary,
+    d.baseline_candidates
 from docs d
 left join biomarker_counts b
     on d.source_file = b.source_file

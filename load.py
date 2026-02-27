@@ -41,13 +41,21 @@ def ensure_raw_tables(con: duckdb.DuckDBPyConnection) -> None:
             markdown_path   VARCHAR,
             biomarker_count INTEGER NOT NULL,
             extracted_at    TIMESTAMP NOT NULL,
-            extraction_method VARCHAR NOT NULL
+            extraction_method VARCHAR NOT NULL,
+            document_summary  VARCHAR,
+            baseline_candidates VARCHAR
         )
     """)
     # Migrate existing tables that have NOT NULL on report_date/provider
     for col in ("report_date", "provider"):
         try:
             con.execute(f"ALTER TABLE raw.documents ALTER COLUMN {col} DROP NOT NULL")
+        except duckdb.CatalogException:
+            pass
+    # Migrate existing tables: add new columns if missing
+    for col in ("document_summary", "baseline_candidates"):
+        try:
+            con.execute(f"ALTER TABLE raw.documents ADD COLUMN {col} VARCHAR")
         except duckdb.CatalogException:
             pass
 
@@ -78,8 +86,9 @@ def load_extraction(con: duckdb.DuckDBPyConnection, result: ExtractionResult) ->
     con.execute(
         """INSERT INTO raw.documents
            (id, source_file, report_date, provider, report_type, tags,
-            markdown_path, biomarker_count, extracted_at, extraction_method)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            markdown_path, biomarker_count, extracted_at, extraction_method,
+            document_summary, baseline_candidates)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         [
             str(uuid.uuid4()),
             result.source_file,
@@ -91,6 +100,8 @@ def load_extraction(con: duckdb.DuckDBPyConnection, result: ExtractionResult) ->
             len(result.biomarkers),
             result.extracted_at,
             result.extraction_method,
+            result.document_summary,
+            json.dumps(result.metadata.baseline_candidates) if result.metadata.baseline_candidates else None,
         ],
     )
 
