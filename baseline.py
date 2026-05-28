@@ -85,7 +85,7 @@ def get_latest_findings(db_path=DB_PATH) -> str:
     return "\n".join(lines)
 
 
-def propose_updates() -> str | None:
+def propose_updates(db_path=DB_PATH) -> str | None:
     """Call Claude to propose baseline updates. Returns proposed YAML or None."""
     import anthropic
 
@@ -98,7 +98,7 @@ def propose_updates() -> str | None:
     else:
         current_baseline = baseline_path.read_text()
 
-    findings = get_latest_findings()
+    findings = get_latest_findings(db_path=db_path)
 
     prompt_template = (PROMPTS_DIR / "baseline_prompt.txt").read_text()
     prompt = prompt_template.format(current_baseline=current_baseline, findings=findings)

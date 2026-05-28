@@ -12,9 +12,19 @@ Only add findings that are permanently relevant to future medical decisions, suc
 - New diagnoses or conditions
 - Findings from specialist or therapy letters that describe permanent conditions
 
+Also consider transitions on existing conditions. When findings indicate that an active
+condition has resolved, partially improved, recurred, or otherwise changed state — propose
+updating the existing entry's `status:` field (active -> monitoring / resolved; resolved ->
+active if recurrent) and append the supporting evidence (with the report date and a brief
+quote or reference) to its `details:`. Do not delete the historical context; layer the new
+state on top.
+
+Valid status values: `active`, `monitoring`, `confirmed`, `resolved`.
+
 Do NOT add:
 - Acute, one-time lab abnormalities
-- Values that are already captured in the current baseline
+- Values that are already captured in the current baseline — UNLESS the new finding changes
+  the status of an existing condition, in which case update that entry in place.
 - Commentary, reasoning, or explanations
 
 Current baseline:
