@@ -21,6 +21,23 @@ def _read_prompt() -> str:
     return (PROMPTS_DIR / "extraction_prompt.txt").read_text()
 
 
+def extract_fenced_block(text: str) -> str:
+    """Return the content of the first triple-backtick code fence.
+
+    Ignores an optional language tag on the opening fence and any prose
+    before or after the block. If no fence is present, returns the
+    stripped text unchanged. Shared by the extraction (JSON) and baseline
+    (YAML) response parsers.
+    """
+    if "```" not in text:
+        return text.strip()
+    after_open = text.split("```", 1)[1]
+    # Drop the optional language tag on the fence's opening line
+    if "\n" in after_open:
+        after_open = after_open.split("\n", 1)[1]
+    return after_open.split("```", 1)[0].strip()
+
+
 def _redact_pdf(pdf_path: Path) -> tuple[bytes, bool]:
     """Redact PII strings from PDF before sending to API.
 
@@ -151,10 +168,7 @@ def extract_api(
     # Parse response
     if not response.content or not hasattr(response.content[0], "text"):
         raise ValueError("Empty or unexpected response from Claude API")
-    response_text = response.content[0].text
-    # Strip markdown code fences if present
-    response_text = re.sub(r"^```(?:json)?\s*\n?", "", response_text)
-    response_text = re.sub(r"\n?```\s*$", "", response_text)
+    response_text = extract_fenced_block(response.content[0].text)
     if pii_mapping:
         response_text = restore_pii(response_text, pii_mapping)
     data = json.loads(response_text)

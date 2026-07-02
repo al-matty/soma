@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from extract import SUPPORTED_SUFFIXES, extract_api
+from extract import SUPPORTED_SUFFIXES, extract_api, extract_fenced_block
 
 
 def _stub_anthropic_response(payload: dict) -> SimpleNamespace:
@@ -50,6 +50,27 @@ def stub_client(monkeypatch):
 
     monkeypatch.setattr(anthropic, "Anthropic", _Client)
     return captured
+
+
+def test_fenced_block_strips_language_tag():
+    """A ```json fenced block returns only its inner content."""
+    assert extract_fenced_block('```json\n{"a": 1}\n```') == '{"a": 1}'
+
+
+def test_fenced_block_ignores_leading_prose():
+    """Reasoning before the fence is discarded (baseline's YAML case)."""
+    text = "Here is my proposal:\n```yaml\nkey: value\n```\nDone."
+    assert extract_fenced_block(text) == "key: value"
+
+
+def test_fenced_block_bare_fence():
+    """A fence with no language tag still yields its content."""
+    assert extract_fenced_block("```\nplain\n```") == "plain"
+
+
+def test_fenced_block_no_fence_passthrough():
+    """Unfenced text is returned stripped."""
+    assert extract_fenced_block('  {"a": 1}  ') == '{"a": 1}'
 
 
 def test_unsupported_suffix_raises(tmp_path):

@@ -134,16 +134,10 @@ def propose_updates(db_path=DB_PATH) -> str | None:
     sys.stdout.write("\n")
     sys.stdout.flush()
 
-    # Extract YAML from fenced block
-    if fence_marker in full_text:
-        yaml_part = full_text.split(fence_marker, 1)[1]
-        # Strip closing fence
-        if "```" in yaml_part:
-            yaml_part = yaml_part.split("```", 1)[0]
-        return restore_pii(yaml_part.strip(), pii_mapping)
+    # Extract YAML from the fenced block (falls back to the whole response)
+    from extract import extract_fenced_block
 
-    # Fallback: no fence found, treat entire response as YAML
-    return restore_pii(full_text.strip(), pii_mapping)
+    return restore_pii(extract_fenced_block(full_text), pii_mapping)
 
 
 def show_diff(current: str, proposed: str) -> str:
