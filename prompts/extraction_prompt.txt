@@ -1,16 +1,20 @@
 Extract all data from this lab report. Return a JSON object with two keys:
 
-1. "biomarkers": a JSON array where each entry has:
+1. "biomarkers": a JSON array of EVERY measured or quantified clinical value in the
+   document. This includes lab/blood values AND clinical measurements such as periodontal
+   pocket depths, bleeding-on-probing scores, blood pressure, weight, BMI, imaging-derived
+   sizes (lesion diameters, etc.), and any graded qualitative scoring (e.g. "absent /
+   minimal / moderate / severe"). Each entry has:
 {
   "report_date": "YYYY-MM-DD",
-  "provider": "<lab provider name>",
+  "provider": "<lab or clinic name>",
   "biomarker_name": "<standard biomarker name>",
-  "value": "<raw value as-is, including any < or > prefixes>",
-  "unit": "<unit as printed on report>",
+  "value": "<raw value as-is, including any < or > prefixes; for qualitative scoring, use the printed word>",
+  "unit": "<unit as printed on report; use 'qualitative' for non-numeric grades>",
   "reference_range_low": "<lower bound or null>",
   "reference_range_high": "<upper bound or null>",
   "loinc_code": "<LOINC code if known, else null>",
-  "notes": "<any relevant flags, e.g. 'hemolyzed sample'>"
+  "notes": "<any relevant flags, e.g. 'hemolyzed sample', or context like 'patient-reported approximation'>"
 }
 
 2. "document_summary": a markdown string summarizing the full report, including:
@@ -21,8 +25,10 @@ Extract all data from this lab report. Return a JSON object with two keys:
 
 3. "metadata": {
    "report_type": "<blood_panel|genetics|radiology|specialist|prescription|other>",
+   "report_date": "YYYY-MM-DD",
+   "provider": "<lab or clinic name>",
    "tags": ["<relevant tags>"],
-   "baseline_candidates": ["<any findings that are permanent medical facts, e.g. genetic variants, chronic conditions>"]
+   "baseline_candidates": ["<findings that are either (a) permanent medical facts, e.g. genetic variants, chronic conditions, OR (b) significant status changes to known conditions: resolution, partial improvement, recurrence, complications. For status changes, phrase as e.g. 'Resolution of <condition>' or 'Recurrence of <condition>' with the supporting evidence>"]
 }
 
 Rules:
@@ -30,6 +36,9 @@ Rules:
 - Preserve original values and units exactly as printed. Do NOT convert units.
 - Use standard biomarker names (e.g., "Glucose, Fasting" not "Glu").
 - Include ALL biomarkers, not just flagged ones.
+- Measured or quantified clinical values ALWAYS belong in "biomarkers", never in
+  "baseline_candidates". baseline_candidates is for narrative-level findings (diagnoses,
+  resolutions, genetic variants) — not for the underlying numbers that evidence them.
 - If a value has a prefix like "<0.1" or ">100", keep it as a string.
 - Double-check every numeric value against the PDF. Pay close attention to decimal points, digit groupings, and similar-looking characters (0/O, 1/l, 5/S).
 - For each biomarker, verify the unit matches what's printed next to that specific value.

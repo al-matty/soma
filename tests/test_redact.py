@@ -96,6 +96,20 @@ def test_load_empty_redact_key(tmp_path, monkeypatch):
     assert load_redact_strings() == []
 
 
+def test_load_empty_file(tmp_path, monkeypatch):
+    """Returns empty list when redact.yml is empty."""
+    monkeypatch.setattr("redact.PROFILE_DIR", tmp_path)
+    (tmp_path / "redact.yml").write_text("")
+    assert load_redact_strings() == []
+
+
+def test_load_null_redact_key(tmp_path, monkeypatch):
+    """Returns empty list when redact key has no value."""
+    monkeypatch.setattr("redact.PROFILE_DIR", tmp_path)
+    (tmp_path / "redact.yml").write_text("redact:\n")
+    assert load_redact_strings() == []
+
+
 def test_load_sorted_longest_first(tmp_path, monkeypatch):
     """Loaded strings are sorted longest-first."""
     monkeypatch.setattr("redact.PROFILE_DIR", tmp_path)

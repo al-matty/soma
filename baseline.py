@@ -1,6 +1,7 @@
 """Baseline updater - proposes derived baseline updates via Claude."""
 
 import difflib
+import json
 import sys
 
 import duckdb
@@ -35,22 +36,56 @@ def get_latest_findings(db_path=DB_PATH) -> str:
         order by report_date desc, biomarker_key
     """)
 
+    lines = []
+    if rows:
+        lines.append("Recent biomarker results:")
+        for r in rows:
+            ref = "in range" if r["is_within_ref_range"] else "OUT OF RANGE" if r["is_within_ref_range"] is not None else "unknown"
+            val = f"{r['value_si']:.2f}" if r["value_si"] is not None else r.get("value_raw", "N/A")
+            unit = r["unit_si"] or ""
+            lines.append(f"  {r['report_date']} | {r['biomarker_key']}: {val} {unit} ({r['provider']}) - {ref}")
+
+    # Document context: summaries and baseline candidates
+    # Gracefully handle databases where dim_documents hasn't been re-materialized yet
+    try:
+        docs = _query(con, """
+            select
+                report_date, provider, report_type, source_file,
+                document_summary, baseline_candidates
+            from main.dim_documents
+            where document_summary is not null
+               or baseline_candidates is not null
+            order by report_date desc
+        """)
+    except duckdb.BinderException:
+        docs = []
+
     con.close()
 
-    if not rows:
-        return "No biomarker data found."
+    if docs:
+        lines.append("")
+        lines.append("Document summaries and baseline candidates:")
+        for d in docs:
+            lines.append(f"\n--- {d['report_date']} | {d['report_type']} ({d['provider']}) ---")
+            if d.get("document_summary"):
+                lines.append(d["document_summary"])
+            if d.get("baseline_candidates"):
+                try:
+                    candidates = json.loads(d["baseline_candidates"])
+                except (ValueError, TypeError):
+                    candidates = []
+                if candidates:
+                    lines.append("Baseline candidates:")
+                    for c in candidates:
+                        lines.append(f"  - {c}")
 
-    lines = ["Recent biomarker results:"]
-    for r in rows:
-        ref = "in range" if r["is_within_ref_range"] else "OUT OF RANGE" if r["is_within_ref_range"] is not None else "unknown"
-        val = f"{r['value_si']:.2f}" if r["value_si"] is not None else r.get("value_raw", "N/A")
-        unit = r["unit_si"] or ""
-        lines.append(f"  {r['report_date']} | {r['biomarker_key']}: {val} {unit} ({r['provider']}) - {ref}")
+    if not lines:
+        return "No findings data found."
 
     return "\n".join(lines)
 
 
-def propose_updates() -> str | None:
+def propose_updates(db_path=DB_PATH) -> str | None:
     """Call Claude to propose baseline updates. Returns proposed YAML or None."""
     import anthropic
 
@@ -63,7 +98,7 @@ def propose_updates() -> str | None:
     else:
         current_baseline = baseline_path.read_text()
 
-    findings = get_latest_findings()
+    findings = get_latest_findings(db_path=db_path)
 
     prompt_template = (PROMPTS_DIR / "baseline_prompt.txt").read_text()
     prompt = prompt_template.format(current_baseline=current_baseline, findings=findings)
@@ -99,16 +134,10 @@ def propose_updates() -> str | None:
     sys.stdout.write("\n")
     sys.stdout.flush()
 
-    # Extract YAML from fenced block
-    if fence_marker in full_text:
-        yaml_part = full_text.split(fence_marker, 1)[1]
-        # Strip closing fence
-        if "```" in yaml_part:
-            yaml_part = yaml_part.split("```", 1)[0]
-        return restore_pii(yaml_part.strip(), pii_mapping)
+    # Extract YAML from the fenced block (falls back to the whole response)
+    from extract import extract_fenced_block
 
-    # Fallback: no fence found, treat entire response as YAML
-    return restore_pii(full_text.strip(), pii_mapping)
+    return restore_pii(extract_fenced_block(full_text), pii_mapping)
 
 
 def show_diff(current: str, proposed: str) -> str:

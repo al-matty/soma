@@ -21,11 +21,16 @@ Usage:
 
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 import typer
 
 from config import DATA_DIR, DB_PATH, DBT_DIR, FINDINGS_DIR, PROFILE_DIR, RAW_DIR
+
+# Use the dbt binary in the same venv as this Python interpreter, so a globally
+# installed dbt Cloud CLI on PATH doesn't silently hijack our local Core+DuckDB runs.
+DBT_BIN = str(Path(sys.executable).parent / "dbt")
 
 app = typer.Typer(help="Soma - personal health data pipeline")
 
@@ -103,9 +108,9 @@ def transform() -> None:
         )
 
     dbt_commands = [
-        ["dbt", "seed"],
-        ["dbt", "run"],
-        ["dbt", "snapshot"],
+        [DBT_BIN, "seed"],
+        [DBT_BIN, "run"],
+        [DBT_BIN, "snapshot"],
     ]
     for cmd in dbt_commands:
         typer.echo(f"Running: {' '.join(cmd)}")
@@ -119,12 +124,12 @@ def transform() -> None:
 
 @app.command()
 def extract(
-    pdf: str = typer.Option(None, help="Path to PDF lab report"),
+    pdf: str = typer.Option(None, help="Path to source report (.pdf, .md, or .txt)"),
     method: str = typer.Option("api", help="Extraction method: 'api' or 'manual'"),
-    save_redacted: bool = typer.Option(False, "--save-redacted", help="Save redacted PDF to data/raw/ for visual verification"),
+    save_redacted: bool = typer.Option(False, "--save-redacted", help="Save redacted copy to data/raw/ for visual verification"),
 ) -> None:
-    """Extract biomarkers from a lab report PDF."""
-    from extract import extract_api, extract_manual
+    """Extract biomarkers and findings from a lab report or patient note."""
+    from extract import SUPPORTED_SUFFIXES, extract_api, extract_manual
 
     raw_dir = _raw_dir()
     findings_dir = _findings_dir()
@@ -133,18 +138,24 @@ def extract(
         if not pdf:
             typer.echo("Error: --pdf is required for API extraction")
             raise typer.Exit(1)
-        pdf_path = Path(pdf)
-        if not pdf_path.exists():
-            typer.echo(f"Error: PDF not found: {pdf}")
+        file_path = Path(pdf)
+        if not file_path.exists():
+            typer.echo(f"Error: file not found: {pdf}")
             raise typer.Exit(1)
-        typer.echo(f"Extracting from {pdf_path.name} via API...")
+        if file_path.suffix.lower() not in SUPPORTED_SUFFIXES:
+            typer.echo(
+                f"Error: unsupported file type {file_path.suffix}. "
+                f"Expected one of {sorted(SUPPORTED_SUFFIXES)}."
+            )
+            raise typer.Exit(1)
+        typer.echo(f"Extracting from {file_path.name} via API...")
         result, paths = extract_api(
-            pdf_path, save_redacted=save_redacted,
+            file_path, save_redacted=save_redacted,
             raw_dir=raw_dir, findings_dir=findings_dir,
         )
 
         if save_redacted:
-            redacted_path = raw_dir / f"{pdf_path.stem}_redacted.pdf"
+            redacted_path = raw_dir / f"{file_path.stem}_redacted{file_path.suffix.lower()}"
             if redacted_path.exists():
                 typer.echo(f"Redacted: {redacted_path}")
             else:
@@ -190,7 +201,7 @@ def update_baseline() -> None:
     current = baseline_path.read_text() if baseline_path.exists() else ""
 
     typer.echo("Analyzing latest findings...\n")
-    proposed = propose_updates()
+    proposed = propose_updates(db_path=_db_path())
 
     if proposed is None:
         typer.echo("ANTHROPIC_API_KEY not set. Cannot propose updates.")
@@ -307,9 +318,9 @@ def reset(
 
 @app.command()
 def run(
-    pdf: str = typer.Option(None, help="Path to PDF lab report"),
+    pdf: str = typer.Option(None, help="Path to source report (.pdf, .md, or .txt)"),
     method: str = typer.Option("api", help="Extraction method: 'api' or 'manual'"),
-    save_redacted: bool = typer.Option(False, "--save-redacted", help="Save redacted PDF to data/raw/ for visual verification"),
+    save_redacted: bool = typer.Option(False, "--save-redacted", help="Save redacted copy to data/raw/ for visual verification"),
 ) -> None:
     """Run the full pipeline: extract -> load -> transform -> render.
 
@@ -351,16 +362,24 @@ def compare(
         raise typer.Exit(1)
 
     con = duckdb.connect(":memory:")
-    con.execute(f"ATTACH '{DB_PATH}' AS prod (READ_ONLY)")
-    con.execute(f"ATTACH '{env_db}' AS env (READ_ONLY)")
+    # dbt materializes marts as views whose definitions reference the "soma"
+    # catalog by name, so each database must be attached under exactly that
+    # alias for its views to resolve. Attach one at a time and snapshot the
+    # mart into a temp table before diffing.
+    for alias, db_file in [("prod_fct", DB_PATH), ("env_fct", env_db)]:
+        con.execute(f"ATTACH '{db_file}' AS soma (READ_ONLY)")
+        con.execute(f"CREATE TEMP TABLE {alias} AS SELECT * FROM soma.main.fct_biomarkers")
+        con.execute("DETACH soma")
 
     where_clause = ""
+    params = []
     if source_file:
-        where_clause = f"AND (p.source_file = '{source_file}' OR d.source_file = '{source_file}')"
+        where_clause = "AND (p.source_file = ? OR d.source_file = ?)"
+        params = [source_file, source_file]
 
     # Summary counts
-    prod_count = con.execute("SELECT count(*) FROM prod.main.fct_biomarkers").fetchone()[0]
-    env_count = con.execute("SELECT count(*) FROM env.main.fct_biomarkers").fetchone()[0]
+    prod_count = con.execute("SELECT count(*) FROM prod_fct").fetchone()[0]
+    env_count = con.execute("SELECT count(*) FROM env_fct").fetchone()[0]
     typer.echo(f"Production: {prod_count} biomarker rows")
     typer.echo(f"Environment '{env}': {env_count} biomarker rows")
     typer.echo("")
@@ -377,19 +396,19 @@ def compare(
             case
                 when p.biomarker_key is null then 'ENV ONLY'
                 when d.biomarker_key is null then 'PROD ONLY'
-                when p.value_si != d.value_si then 'CHANGED'
+                when p.value_si IS DISTINCT FROM d.value_si then 'CHANGED'
                 else 'SAME'
             end as status
-        FROM prod.main.fct_biomarkers p
-        FULL OUTER JOIN env.main.fct_biomarkers d
+        FROM prod_fct p
+        FULL OUTER JOIN env_fct d
             ON p.biomarker_key = d.biomarker_key
             AND p.report_date = d.report_date
-        WHERE (p.value_si != d.value_si
+        WHERE (p.value_si IS DISTINCT FROM d.value_si
             OR p.biomarker_key IS NULL
             OR d.biomarker_key IS NULL)
             {where_clause}
         ORDER BY report_date, biomarker
-    """)
+    """, params=params)
 
     if result.shape[0] == 0:
         typer.echo("No differences found.")

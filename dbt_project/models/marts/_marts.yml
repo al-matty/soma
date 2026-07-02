@@ -43,3 +43,7 @@ models:
         tests:
           - unique
           - not_null
+      - name: document_summary
+        description: Markdown summary of the full report content
+      - name: baseline_candidates
+        description: JSON array of permanent medical facts extracted from the report
