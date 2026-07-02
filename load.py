@@ -81,7 +81,10 @@ def load_extraction(con: duckdb.DuckDBPyConnection, result: ExtractionResult) ->
         result.biomarkers[0].provider if result.biomarkers else None
     )
     year = str(report_date.year) if report_date else "unknown"
-    md_path = f"docs/findings/{year}/{report_date}_{result.metadata.report_type}_{provider}.md"
+    md_path = (
+        f"docs/findings/{year}/{report_date or 'unknown'}"
+        f"_{result.metadata.report_type}_{provider or 'unknown'}.md"
+    )
 
     con.execute(
         """INSERT INTO raw.documents

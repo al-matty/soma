@@ -14,7 +14,7 @@ def load_redact_strings() -> list[str]:
     if not redact_path.exists():
         return []
 
-    strings = yaml.safe_load(redact_path.read_text()).get("redact", [])
+    strings = (yaml.safe_load(redact_path.read_text()) or {}).get("redact") or []
     if not strings:
         return []
 

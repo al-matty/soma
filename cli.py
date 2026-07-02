@@ -362,16 +362,24 @@ def compare(
         raise typer.Exit(1)
 
     con = duckdb.connect(":memory:")
-    con.execute(f"ATTACH '{DB_PATH}' AS prod (READ_ONLY)")
-    con.execute(f"ATTACH '{env_db}' AS env (READ_ONLY)")
+    # dbt materializes marts as views whose definitions reference the "soma"
+    # catalog by name, so each database must be attached under exactly that
+    # alias for its views to resolve. Attach one at a time and snapshot the
+    # mart into a temp table before diffing.
+    for alias, db_file in [("prod_fct", DB_PATH), ("env_fct", env_db)]:
+        con.execute(f"ATTACH '{db_file}' AS soma (READ_ONLY)")
+        con.execute(f"CREATE TEMP TABLE {alias} AS SELECT * FROM soma.main.fct_biomarkers")
+        con.execute("DETACH soma")
 
     where_clause = ""
+    params = []
     if source_file:
-        where_clause = f"AND (p.source_file = '{source_file}' OR d.source_file = '{source_file}')"
+        where_clause = "AND (p.source_file = ? OR d.source_file = ?)"
+        params = [source_file, source_file]
 
     # Summary counts
-    prod_count = con.execute("SELECT count(*) FROM prod.main.fct_biomarkers").fetchone()[0]
-    env_count = con.execute("SELECT count(*) FROM env.main.fct_biomarkers").fetchone()[0]
+    prod_count = con.execute("SELECT count(*) FROM prod_fct").fetchone()[0]
+    env_count = con.execute("SELECT count(*) FROM env_fct").fetchone()[0]
     typer.echo(f"Production: {prod_count} biomarker rows")
     typer.echo(f"Environment '{env}': {env_count} biomarker rows")
     typer.echo("")
@@ -388,19 +396,19 @@ def compare(
             case
                 when p.biomarker_key is null then 'ENV ONLY'
                 when d.biomarker_key is null then 'PROD ONLY'
-                when p.value_si != d.value_si then 'CHANGED'
+                when p.value_si IS DISTINCT FROM d.value_si then 'CHANGED'
                 else 'SAME'
             end as status
-        FROM prod.main.fct_biomarkers p
-        FULL OUTER JOIN env.main.fct_biomarkers d
+        FROM prod_fct p
+        FULL OUTER JOIN env_fct d
             ON p.biomarker_key = d.biomarker_key
             AND p.report_date = d.report_date
-        WHERE (p.value_si != d.value_si
+        WHERE (p.value_si IS DISTINCT FROM d.value_si
             OR p.biomarker_key IS NULL
             OR d.biomarker_key IS NULL)
             {where_clause}
         ORDER BY report_date, biomarker
-    """)
+    """, params=params)
 
     if result.shape[0] == 0:
         typer.echo("No differences found.")

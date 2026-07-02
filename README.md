@@ -95,7 +95,7 @@ Without `--pdf`, `run` skips extraction and runs load -> transform -> render on 
 
 `run` chains four steps automatically:
 
-**Step 1: Extract** - Reads your PDF, base64-encodes it, sends it to Claude Sonnet with the extraction prompt. Claude returns structured JSON (biomarker names, values, units, reference ranges, LOINC codes) and a markdown summary. Two files are written:
+**Step 1: Extract** - Reads your PDF, base64-encodes it, sends it to Claude (model set by `EXTRACTION_MODEL` in `config.py`, currently Opus 4.7) with the extraction prompt. Claude returns structured JSON (biomarker names, values, units, reference ranges, LOINC codes) and a markdown summary. Two files are written:
 - `data/raw/2026-02-24_blood_panel_<provider>_<timestamp>.json` - the structured data
 - `docs/findings/2026/2026-02-24_blood_panel_<provider>.md` - the narrative summary
 
